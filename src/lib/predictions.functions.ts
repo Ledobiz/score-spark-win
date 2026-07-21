@@ -2,6 +2,20 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
+export interface PredictionResult {
+  fixture: string;
+  league: string;
+  predicted_outcome: string;
+  confidence: number;
+  probabilities: {
+    "1X2": { home: number; draw: number; away: number };
+    "BTTS": { yes: number; no: number };
+    "Over/Under 2.5": { over: number; under: number };
+  };
+  summary: string;
+}
+
+
 // External Python API config — set PYTHON_API_URL and PYTHON_API_KEY as secrets later.
 async function callExternal(path: string, params: Record<string, string> = {}): Promise<unknown | null> {
   const base = process.env.PYTHON_API_URL;
@@ -81,7 +95,7 @@ export const getPrediction = createServerFn({ method: "GET" })
     z.object({ fixtureId: z.string(), home: z.string(), away: z.string(), league: z.string() }).parse(d))
   .handler(async ({ data, context }) => {
     const ext = await callExternal("/prediction", { fixture_id: data.fixtureId });
-    if (ext) return ext as Record<string, unknown>;
+    if (ext) return ext as PredictionResult;
 
     const rand = seededRandom(data.fixtureId);
     const homeProb = 0.3 + rand() * 0.45;
