@@ -43,6 +43,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 {n.label}
               </Link>
             ))}
+            {isAdmin && (
+              <Link to="/admin" className="flex items-center gap-1 rounded-md px-3 py-1.5 text-sm text-primary hover:bg-secondary [&.active]:bg-secondary" activeProps={{ className: "active" }}>
+                <Shield className="h-3.5 w-3.5" /> Admin
+              </Link>
+            )}
           </nav>
           <div className="ml-auto flex items-center gap-2">
             <Button size="icon" variant="ghost" onClick={toggle} aria-label="Toggle theme">
@@ -59,6 +64,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               {n.label}
             </Link>
           ))}
+          {isAdmin && (
+            <Link to="/admin" className="whitespace-nowrap rounded-md px-3 py-1 text-xs text-primary [&.active]:bg-secondary" activeProps={{ className: "active" }}>
+              Admin
+            </Link>
+          )}
         </div>
       </header>
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6">{children}</main>
