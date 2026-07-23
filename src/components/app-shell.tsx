@@ -1,10 +1,11 @@
 import { Link } from "@tanstack/react-router";
-import { LogOut, Moon, Sun, Zap } from "lucide-react";
+import { LogOut, Moon, Shield, Sun, Zap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useTheme } from "@/lib/theme";
 import { Button } from "@/components/ui/button";
+import { useIsAdmin } from "@/lib/use-is-admin";
 
 const NAV = [
   { to: "/dashboard", label: "Dashboard" },
@@ -19,6 +20,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { theme, toggle } = useTheme();
+  const { data: isAdmin } = useIsAdmin();
 
   const signOut = async () => {
     await queryClient.cancelQueries();
