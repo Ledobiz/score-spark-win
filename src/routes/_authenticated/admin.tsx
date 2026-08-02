@@ -66,12 +66,20 @@ function AdminPage() {
   );
 }
 
+const PLAN_OPTIONS = ["free_trial", "weekly", "monthly", "annual"] as const;
+const STATUS_OPTIONS = ["trialing", "active", "cancelled", "expired"] as const;
+
 function UsersTab() {
   const list = useServerFn(adminListUsers);
   const setRole = useServerFn(adminSetRole);
   const qc = useQueryClient();
   const { data, isLoading } = useQuery({ queryKey: ["admin", "users"], queryFn: () => list() });
   const [q, setQ] = useState("");
+  const [plan, setPlan] = useState("all");
+  const [status, setStatus] = useState("all");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const [openUser, setOpenUser] = useState<string | null>(null);
 
   const toggle = useMutation({
     mutationFn: (v: { userId: string; grant: boolean }) =>
@@ -80,15 +88,50 @@ function UsersTab() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  const filtered = (data ?? []).filter((u: any) =>
-    !q || (u.email ?? "").toLowerCase().includes(q.toLowerCase()) ||
-    (u.full_name ?? "").toLowerCase().includes(q.toLowerCase()));
+  const filtered = (data ?? []).filter((u: any) => {
+    const term = q.trim().toLowerCase();
+    if (term && !(u.email ?? "").toLowerCase().includes(term) && !(u.full_name ?? "").toLowerCase().includes(term)) return false;
+    if (plan !== "all" && (u.subscription?.plan_id ?? "none") !== plan) return false;
+    if (status !== "all" && (u.subscription?.status ?? "none") !== status) return false;
+    const joined = new Date(u.created_at).getTime();
+    if (from && joined < new Date(from).getTime()) return false;
+    if (to && joined > new Date(to).getTime() + 86400e3 - 1) return false;
+    return true;
+  });
+
+  const resetFilters = () => { setQ(""); setPlan("all"); setStatus("all"); setFrom(""); setTo(""); };
+  const hasFilters = !!q || plan !== "all" || status !== "all" || !!from || !!to;
 
   return (
     <Card className="p-4">
-      <div className="mb-3 flex items-center justify-between gap-2">
-        <Input placeholder="Search email or name…" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-sm" />
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+        <Input placeholder="Search email or name…" value={q} onChange={(e) => setQ(e.target.value)} />
+        <Select value={plan} onValueChange={setPlan}>
+          <SelectTrigger><SelectValue placeholder="Plan" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All plans</SelectItem>
+            <SelectItem value="none">No plan</SelectItem>
+            {PLAN_OPTIONS.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={status} onValueChange={setStatus}>
+          <SelectTrigger><SelectValue placeholder="Status" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All statuses</SelectItem>
+            <SelectItem value="none">No subscription</SelectItem>
+            {STATUS_OPTIONS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <label className="text-xs text-muted-foreground">Joined from
+          <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="mt-1" />
+        </label>
+        <label className="text-xs text-muted-foreground">Joined to
+          <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="mt-1" />
+        </label>
+      </div>
+      <div className="mb-3 mt-3 flex items-center justify-between gap-2">
         <div className="text-xs text-muted-foreground">{filtered.length} users</div>
+        {hasFilters && <Button size="sm" variant="ghost" onClick={resetFilters}>Clear filters</Button>}
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
@@ -99,10 +142,11 @@ function UsersTab() {
               <th className="py-2 pr-3">Status</th>
               <th className="py-2 pr-3">Joined</th>
               <th className="py-2 pr-3">Admin</th>
+              <th className="py-2 pr-3"></th>
             </tr>
           </thead>
           <tbody>
-            {isLoading && <tr><td className="py-6 text-muted-foreground" colSpan={5}>Loading…</td></tr>}
+            {isLoading && <tr><td className="py-6 text-muted-foreground" colSpan={6}>Loading…</td></tr>}
             {filtered.map((u: any) => {
               const isAdmin = u.roles?.includes("admin");
               return (
@@ -124,18 +168,184 @@ function UsersTab() {
                       onCheckedChange={(v) => toggle.mutate({ userId: u.id, grant: v })}
                     />
                   </td>
+                  <td className="py-2 pr-3 text-right">
+                    <Button size="sm" variant="outline" onClick={() => setOpenUser(u.id)}>View</Button>
+                  </td>
                 </tr>
               );
             })}
             {!isLoading && filtered.length === 0 && (
-              <tr><td className="py-6 text-muted-foreground" colSpan={5}>No users found.</td></tr>
+              <tr><td className="py-6 text-muted-foreground" colSpan={6}>No users found.</td></tr>
             )}
           </tbody>
         </table>
       </div>
+
+      <Sheet open={!!openUser} onOpenChange={(o) => !o && setOpenUser(null)}>
+        <SheetContent className="w-full overflow-y-auto sm:max-w-xl">
+          {openUser && <UserDetail userId={openUser} />}
+        </SheetContent>
+      </Sheet>
     </Card>
   );
 }
+
+function fmt(d: string | null | undefined) {
+  return d ? new Date(d).toLocaleString() : "—";
+}
+
+function UserDetail({ userId }: { userId: string }) {
+  const get = useServerFn(adminGetUserDetail);
+  const change = useServerFn(adminChangePlan);
+  const qc = useQueryClient();
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin", "user", userId],
+    queryFn: () => get({ data: { userId } }),
+  });
+  const [targetPlan, setTargetPlan] = useState("monthly");
+  const [reason, setReason] = useState("");
+  const [pending, setPending] = useState<null | { action: "set_plan" | "start_trial" | "cancel"; label: string }>(null);
+
+  const mut = useMutation({
+    mutationFn: (v: { action: "set_plan" | "start_trial" | "cancel" }) =>
+      change({ data: { userId, action: v.action, planId: targetPlan, reason: reason || undefined } }),
+    onSuccess: () => {
+      toast.success("Subscription updated");
+      setReason("");
+      qc.invalidateQueries({ queryKey: ["admin", "user", userId] });
+      qc.invalidateQueries({ queryKey: ["admin", "users"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  if (isLoading || !data) return <div className="py-8 text-sm text-muted-foreground">Loading…</div>;
+  const sub = data.subscription as any;
+
+  return (
+    <div className="space-y-5">
+      <SheetHeader className="px-0">
+        <SheetTitle>{(data.profile as any)?.full_name ?? "Unnamed user"}</SheetTitle>
+        <SheetDescription>{(data.profile as any)?.email ?? userId}</SheetDescription>
+      </SheetHeader>
+
+      <div className="grid grid-cols-2 gap-3 text-sm">
+        <Field label="Plan" value={sub?.plan_id ?? "—"} />
+        <Field label="Status" value={sub?.status ?? "none"} />
+        <Field label="Trial ends" value={fmt(sub?.trial_ends_at)} />
+        <Field label="Renews / expires" value={fmt(sub?.current_period_end)} />
+        <Field label="Signed up" value={fmt((data.profile as any)?.created_at)} />
+        <Field label="Payment ref" value={sub?.flutterwave_ref ?? "—"} />
+      </div>
+
+      <Separator />
+
+      <div className="space-y-3">
+        <h4 className="text-sm font-semibold">Quick actions</h4>
+        <div className="flex flex-wrap items-center gap-2">
+          <Select value={targetPlan} onValueChange={setTargetPlan}>
+            <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {(data.plans as any[]).filter((p) => p.id !== "free_trial").map((p) => (
+                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button size="sm" disabled={mut.isPending}
+            onClick={() => setPending({ action: "set_plan", label: `move this user to the "${targetPlan}" plan` })}>
+            Apply plan
+          </Button>
+          <Button size="sm" variant="secondary" disabled={mut.isPending}
+            onClick={() => setPending({ action: "start_trial", label: "start a fresh 14-day free trial" })}>
+            Start trial
+          </Button>
+          <Button size="sm" variant="destructive" disabled={mut.isPending}
+            onClick={() => setPending({ action: "cancel", label: "cancel this subscription" })}>
+            Cancel
+          </Button>
+        </div>
+        <Input placeholder="Reason (optional, saved to audit log)" value={reason} onChange={(e) => setReason(e.target.value)} />
+      </div>
+
+      <Separator />
+
+      <Section title="Recent predictions & activity">
+        {(data.activity as any[]).length === 0 && <Empty>No activity yet.</Empty>}
+        {(data.activity as any[]).map((a) => (
+          <Row key={a.id} left={a.activity_type} right={new Date(a.created_at).toLocaleString()}
+            sub={a.meta?.fixture ?? a.meta?.market ?? null} />
+        ))}
+      </Section>
+
+      <Section title="Bet slips">
+        {(data.slips as any[]).length === 0 && <Empty>No slips yet.</Empty>}
+        {(data.slips as any[]).map((s) => (
+          <Row key={s.id} left={s.name ?? "Untitled slip"} right={`${s.combined_odds} · ${s.status}`}
+            sub={`${(s.picks ?? []).length} picks · ${new Date(s.created_at).toLocaleDateString()}`} />
+        ))}
+      </Section>
+
+      <Section title="Audit log">
+        {(data.audit as any[]).length === 0 && <Empty>No admin changes recorded.</Empty>}
+        {(data.audit as any[]).map((a) => (
+          <Row key={a.id} left={a.action} right={new Date(a.created_at).toLocaleString()}
+            sub={a.details?.reason ?? `${a.details?.from?.plan_id ?? "none"} → ${a.details?.to?.plan_id ?? "—"} (${a.details?.to?.status ?? "—"})`} />
+        ))}
+      </Section>
+
+      <AlertDialog open={!!pending} onOpenChange={(o) => !o && setPending(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm change</AlertDialogTitle>
+            <AlertDialogDescription>
+              You are about to {pending?.label}. This is recorded in the audit log.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { if (pending) mut.mutate({ action: pending.action }); setPending(null); }}>
+              Confirm
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
+
+function Field({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md border border-border/60 p-2">
+      <div className="text-xs uppercase text-muted-foreground">{label}</div>
+      <div className="mt-0.5 break-words font-medium">{value}</div>
+    </div>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <h4 className="mb-2 text-sm font-semibold">{title}</h4>
+      <div className="max-h-64 space-y-1 overflow-auto">{children}</div>
+    </div>
+  );
+}
+
+function Empty({ children }: { children: React.ReactNode }) {
+  return <p className="text-sm text-muted-foreground">{children}</p>;
+}
+
+function Row({ left, right, sub }: { left: string; right: string; sub?: string | null }) {
+  return (
+    <div className="flex items-start justify-between gap-3 rounded-md border border-border/60 px-2 py-1.5 text-sm">
+      <div>
+        <div className="font-medium">{left}</div>
+        {sub && <div className="text-xs text-muted-foreground">{sub}</div>}
+      </div>
+      <div className="whitespace-nowrap text-xs text-muted-foreground">{right}</div>
+    </div>
+  );
+}
+
 
 function PlansTab() {
   const list = useServerFn(adminListPlans);
