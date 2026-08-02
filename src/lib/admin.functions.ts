@@ -113,7 +113,115 @@ export const adminUpdatePlan = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const adminGetUserDetail = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { userId: string }) => z.object({ userId: z.string().uuid() }).parse(d))
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context);
+    const db = await admin();
+    const [profile, sub, activity, slips, audit, plans] = await Promise.all([
+      db.from("profiles").select("*").eq("id", data.userId).maybeSingle(),
+      db.from("subscriptions").select("*").eq("user_id", data.userId).maybeSingle(),
+      db.from("user_activity").select("*").eq("user_id", data.userId)
+        .order("created_at", { ascending: false }).limit(50),
+      db.from("bet_slips").select("*").eq("user_id", data.userId)
+        .order("created_at", { ascending: false }).limit(20),
+      db.from("admin_audit_log").select("*").eq("target_user_id", data.userId)
+        .order("created_at", { ascending: false }).limit(20),
+      db.from("plans").select("id,name,price_ngn,interval").order("sort_order"),
+    ]);
+    return {
+      profile: profile.data ?? null,
+      subscription: sub.data ?? null,
+      activity: activity.data ?? [],
+      slips: slips.data ?? [],
+      audit: audit.data ?? [],
+      plans: plans.data ?? [],
+    };
+  });
+
+export const adminChangePlan = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { userId: string; action: "set_plan" | "start_trial" | "cancel"; planId?: string; reason?: string }) =>
+    z.object({
+      userId: z.string().uuid(),
+      action: z.enum(["set_plan", "start_trial", "cancel"]),
+      planId: z.string().optional(),
+      reason: z.string().max(300).optional(),
+    }).parse(d))
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context);
+    const db = await admin();
+    const { data: existing } = await db.from("subscriptions")
+      .select("*").eq("user_id", data.userId).maybeSingle();
+
+    let payload: {
+      plan_id: string;
+      status: string;
+      trial_ends_at: string | null;
+      current_period_end: string | null;
+    };
+    if (data.action === "cancel") {
+      payload = {
+        plan_id: existing?.plan_id ?? "free_trial",
+        status: "cancelled",
+        trial_ends_at: existing?.trial_ends_at ?? null,
+        current_period_end: existing?.current_period_end ?? null,
+      };
+    } else if (data.action === "start_trial") {
+      payload = {
+        plan_id: "free_trial",
+        status: "trialing",
+        trial_ends_at: new Date(Date.now() + 14 * 86400e3).toISOString(),
+        current_period_end: null,
+      };
+    } else {
+      const planId = data.planId;
+      if (!planId || planId === "free_trial") throw new Error("Select a paid plan");
+      const days: Record<string, number> = { weekly: 7, monthly: 30, annual: 365 };
+      payload = {
+        plan_id: planId,
+        status: "active",
+        trial_ends_at: null,
+        current_period_end: new Date(Date.now() + (days[planId] ?? 30) * 86400e3).toISOString(),
+      };
+    }
+
+    if (existing) {
+      const { error } = await db.from("subscriptions").update(payload).eq("id", existing.id);
+      if (error) throw new Error(error.message);
+    } else {
+      const { error } = await db.from("subscriptions").insert({ user_id: data.userId, ...payload });
+      if (error) throw new Error(error.message);
+    }
+
+    await db.from("admin_audit_log").insert({
+      actor_id: context.userId,
+      target_user_id: data.userId,
+      action: data.action,
+      details: {
+        from: existing ? { plan_id: existing.plan_id, status: existing.status } : null,
+        to: { ...payload },
+        reason: data.reason ?? null,
+      },
+    });
+
+
+    return { ok: true };
+  });
+
+export const adminListAudit = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context);
+    const db = await admin();
+    const { data } = await db.from("admin_audit_log").select("*")
+      .order("created_at", { ascending: false }).limit(100);
+    return data ?? [];
+  });
+
 export const adminListActivity = createServerFn({ method: "GET" })
+
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertAdmin(context);
