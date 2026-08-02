@@ -155,9 +155,19 @@ export const adminChangePlan = createServerFn({ method: "POST" })
     const { data: existing } = await db.from("subscriptions")
       .select("*").eq("user_id", data.userId).maybeSingle();
 
-    let payload: Record<string, unknown>;
+    let payload: {
+      plan_id: string;
+      status: string;
+      trial_ends_at: string | null;
+      current_period_end: string | null;
+    };
     if (data.action === "cancel") {
-      payload = { status: "cancelled" };
+      payload = {
+        plan_id: existing?.plan_id ?? "free_trial",
+        status: "cancelled",
+        trial_ends_at: existing?.trial_ends_at ?? null,
+        current_period_end: existing?.current_period_end ?? null,
+      };
     } else if (data.action === "start_trial") {
       payload = {
         plan_id: "free_trial",
@@ -191,10 +201,11 @@ export const adminChangePlan = createServerFn({ method: "POST" })
       action: data.action,
       details: {
         from: existing ? { plan_id: existing.plan_id, status: existing.status } : null,
-        to: payload,
+        to: { ...payload },
         reason: data.reason ?? null,
       },
     });
+
 
     return { ok: true };
   });
