@@ -274,6 +274,51 @@ export type Database = {
         }
         Relationships: []
       }
+      user_predictions: {
+        Row: {
+          competition: string
+          confidence: number | null
+          created_at: string
+          fixture: string
+          home_team: string
+          away_team: string
+          id: string
+          method: string | null
+          payload: Json
+          predicted_outcome: string | null
+          result: string | null
+          user_id: string
+        }
+        Insert: {
+          competition: string
+          confidence?: number | null
+          created_at?: string
+          fixture: string
+          home_team: string
+          away_team: string
+          id?: string
+          method?: string | null
+          payload?: Json
+          predicted_outcome?: string | null
+          result?: string | null
+          user_id: string
+        }
+        Update: {
+          competition?: string
+          confidence?: number | null
+          created_at?: string
+          fixture?: string
+          home_team?: string
+          away_team?: string
+          id?: string
+          method?: string | null
+          payload?: Json
+          predicted_outcome?: string | null
+          result?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string

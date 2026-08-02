@@ -5,10 +5,10 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { getLeagues, getFixtures, getPrediction, type PredictionResult } from "@/lib/predictions.functions";
+import { getLeagues, getFixtures, getPredictionDetailed, type PredictionResult, type DetailedPrediction } from "@/lib/predictions.functions";
 import { useEntitlement } from "@/lib/use-entitlement";
-import { Link } from "@tanstack/react-router";
-import { ChevronRight, Loader2, Lock, TrendingUp } from "lucide-react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { ChevronRight, Info, Loader2, Lock, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -23,12 +23,14 @@ function PredictionsPage() {
   const [leagueName, setLeagueName] = useState<string>("");
   const [fixture, setFixture] = useState<{ id: string; home: string; away: string } | null>(null);
   const [prediction, setPrediction] = useState<PredictionResult | null>(null);
+  const [detailed, setDetailed] = useState<DetailedPrediction | null>(null);
   const [loading, setLoading] = useState(false);
   const [todayCount, setTodayCount] = useState<number>(0);
 
+  const navigate = useNavigate();
   const leaguesFn = useServerFn(getLeagues);
   const fixturesFn = useServerFn(getFixtures);
-  const predictFn = useServerFn(getPrediction);
+  const predictFn = useServerFn(getPredictionDetailed);
 
   const { data: leagues } = useQuery({ queryKey: ["leagues"], queryFn: () => leaguesFn() });
   const { data: fixtures, isFetching: fxLoading } = useQuery({
@@ -55,10 +57,11 @@ function PredictionsPage() {
 
   const runPrediction = async (fx: { id: string; home: string; away: string }) => {
     if (overLimit) { toast.error(`Daily limit (${dailyLimit}) reached. Upgrade for unlimited.`); return; }
-    setLoading(true); setFixture(fx); setPrediction(null);
+    setLoading(true); setFixture(fx); setPrediction(null); setDetailed(null);
     try {
-      const res = await predictFn({ data: { fixtureId: fx.id, home: fx.home, away: fx.away, league: leagueName } });
-      setPrediction(res as PredictionResult);
+      const res = await predictFn({ data: { fixtureId: fx.id, home: fx.home, away: fx.away, league: leagueName } }) as DetailedPrediction;
+      setDetailed(res);
+      setPrediction(res.simple);
       setStep(3);
       setTodayCount((c) => c + 1);
     } catch (e) {
@@ -132,7 +135,17 @@ function PredictionsPage() {
 
       {step === 3 && prediction && (
         <>
-          <Button variant="ghost" size="sm" onClick={() => setStep(2)} className="mb-3">← New fixture</Button>
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setStep(2)}>← New fixture</Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!detailed}
+              onClick={() => navigate({ to: "/predictions/detail", state: { detailed } as never })}
+            >
+              <Info className="mr-2 h-4 w-4" /> More Info
+            </Button>
+          </div>
           <Card className="p-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>

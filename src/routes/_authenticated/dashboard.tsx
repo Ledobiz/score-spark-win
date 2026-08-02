@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
 import { useEntitlement } from "@/lib/use-entitlement";
 import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { getRecommendations, getStats } from "@/lib/predictions.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { AreaChart, Area, ResponsiveContainer, XAxis, YAxis, Tooltip, BarChart, Bar, CartesianGrid } from "recharts";
 import { Lock, TrendingUp, Trophy, Flame, Eye, Loader2 } from "lucide-react";
@@ -18,9 +20,34 @@ const MARKETS = ["Home Win", "Away Win", "Draw", "BTTS", "Over 1.5", "Over 2.5"]
 
 function Dashboard() {
   const { data: ent, isLoading } = useEntitlement();
+  const recFn = useServerFn(getRecommendations);
   const { data: recs } = useQuery({
     queryKey: ["recommendations"],
-    queryFn: async () => (await supabase.from("recommendations").select("*").order("kickoff")).data ?? [],
+    queryFn: () => recFn(),
+  });
+  const statsFn = useServerFn(getStats);
+  const { data: stats } = useQuery({
+    queryKey: ["stats"],
+    queryFn: () => statsFn(),
+  });
+  // Per-user activity (prediction_view events, last 30 days) for the views &
+  // streak cards. RLS scopes these rows to the signed-in user.
+  const { data: activity } = useQuery({
+    queryKey: ["activity"],
+    queryFn: async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return [] as { created_at: string; league: string | null }[];
+      const since = new Date(); since.setDate(since.getDate() - 30); since.setHours(0, 0, 0, 0);
+      const { data } = await supabase.from("user_activity")
+        .select("created_at, meta")
+        .eq("user_id", u.user.id)
+        .eq("activity_type", "prediction_view")
+        .gte("created_at", since.toISOString());
+      return (data ?? []).map((r) => ({
+        created_at: r.created_at as string,
+        league: (r.meta as unknown as { league?: string } | null)?.league ?? null,
+      }));
+    },
   });
 
   if (isLoading || !ent) return <AppShell><div className="grid h-64 place-items-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div></AppShell>;
@@ -28,17 +55,42 @@ function Dashboard() {
   const e = ent.entitlement;
   const displayName = ent.profile?.full_name || ent.user.email?.split("@")[0] || "Player";
 
-  // synthetic 7-day chart data
+  // Real per-user activity from user_activity (prediction_view events), bucketed
+  // by local day.
+  const ymd = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const dayCounts: Record<string, number> = {};
+  for (const a of activity ?? []) {
+    const k = ymd(new Date(a.created_at));
+    dayCounts[k] = (dayCounts[k] ?? 0) + 1;
+  }
+
+  // Most-viewed league across the user's recent predictions.
+  const leagueCounts: Record<string, number> = {};
+  for (const a of activity ?? []) if (a.league) leagueCounts[a.league] = (leagueCounts[a.league] ?? 0) + 1;
+  const topLeague = Object.entries(leagueCounts).sort((x, y) => y[1] - x[1])[0]?.[0] ?? null;
+
+  const modelRate = stats?.overall.success_rate ?? 0.5;
   const days = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(); d.setDate(d.getDate() - (6 - i));
-    return {
-      day: format(d, "EEE"),
-      views: 8 + Math.floor(Math.random() * 20),
-      wins: 3 + Math.floor(Math.random() * 8),
-    };
+    const d = new Date(); d.setDate(d.getDate() - (6 - i)); d.setHours(0, 0, 0, 0);
+    const views = dayCounts[ymd(d)] ?? 0;
+    // No resolved followed-bet data — estimate wins as views × model hit rate.
+    return { day: format(d, "EEE"), views, wins: Math.round(views * modelRate) };
   });
-  const winRate = Math.round((days.reduce((s, d) => s + d.wins, 0) / days.reduce((s, d) => s + d.views, 0)) * 100);
-  const streak = 3 + Math.floor(Math.random() * 5);
+  const views7d = days.reduce((s, d) => s + d.views, 0);
+
+  // Consecutive-day activity streak (tolerant of not having viewed yet today).
+  let streak = 0;
+  {
+    const d = new Date(); d.setHours(0, 0, 0, 0);
+    if (!(dayCounts[ymd(d)] > 0)) d.setDate(d.getDate() - 1);
+    while (dayCounts[ymd(d)] > 0) { streak++; d.setDate(d.getDate() - 1); }
+  }
+  const activityLoading = activity === undefined;
+
+  // Real model track record from /stats (out-of-sample accuracy over every
+  // settled prediction), not a synthetic followed-tips rate.
+  const winRate = stats ? Math.round(stats.overall.success_rate * 100) : null;
 
   return (
     <AppShell>
@@ -64,10 +116,10 @@ function Dashboard() {
 
       {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard icon={<Eye className="h-4 w-4" />} label="Predictions viewed (7d)" value={days.reduce((s, d) => s + d.views, 0).toString()} />
-        <StatCard icon={<Trophy className="h-4 w-4" />} label="Win rate (followed)" value={`${winRate}%`} accent />
-        <StatCard icon={<TrendingUp className="h-4 w-4" />} label="Top league" value="EPL" />
-        <StatCard icon={<Flame className="h-4 w-4" />} label="Current streak" value={`${streak}W`} accent />
+        <StatCard icon={<Eye className="h-4 w-4" />} label="Predictions viewed (7d)" value={activityLoading ? "—" : views7d.toString()} />
+        <StatCard icon={<Trophy className="h-4 w-4" />} label="Model win rate" value={winRate !== null ? `${winRate}%` : "—"} accent />
+        <StatCard icon={<TrendingUp className="h-4 w-4" />} label="Top league" value={activityLoading ? "—" : (topLeague ?? "—")} />
+        <StatCard icon={<Flame className="h-4 w-4" />} label="Day streak" value={activityLoading ? "—" : `${streak}d`} accent />
       </div>
 
       {/* Charts */}
