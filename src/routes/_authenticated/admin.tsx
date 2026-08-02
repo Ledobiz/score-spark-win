@@ -11,9 +11,18 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   amIAdmin, adminListUsers, adminSetRole,
   adminListPlans, adminUpdatePlan, adminListActivity,
+  adminGetUserDetail, adminChangePlan,
 } from "@/lib/admin.functions";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Separator } from "@/components/ui/separator";
 import { useState } from "react";
 import { toast } from "sonner";
+
 
 export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
