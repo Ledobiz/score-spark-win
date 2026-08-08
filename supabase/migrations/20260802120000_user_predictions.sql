@@ -21,8 +21,8 @@ CREATE INDEX ON public.user_predictions(user_id, created_at DESC);
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.user_predictions TO authenticated;
 GRANT ALL ON public.user_predictions TO service_role;
 
-ALTER TABLE public.user_predictions ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users manage own predictions" ON public.user_predictions
-  FOR ALL TO authenticated
-  USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
+-- No Row-Level Security (kept intentionally): RLS policies depend on Supabase's
+-- auth.uid() and don't port to a plain Postgres / another provider. Row
+-- ownership is enforced in the application layer instead — every query filters
+-- by the authenticated user_id, and user tables are never queried directly from
+-- the browser. See CLAUDE.md §4.

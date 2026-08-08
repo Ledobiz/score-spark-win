@@ -16,6 +16,18 @@ dist-ssr
 .nitro
 *.local
 
+# Next.js
+.next/
+out/
+next-env.d.ts
+.vercel
+
+# env
+.env*
+
+# Prisma
+/prisma/migrations/dev.db*
+
 # Wrangler / Cloudflare
 .wrangler/
 .dev.vars

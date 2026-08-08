@@ -1,0 +1,222 @@
+// PredictScore — Prisma schema (server-side data access).
+// Auth is self-contained (Auth.js Credentials + this schema) — no Supabase
+// auth.users dependency, so the underlying Postgres host is swappable with a
+// plain pg_dump/restore. `Profile` doubles as the user/credentials table.
+// No RLS anywhere — row ownership is enforced in server code by scoping on userId.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL") // pooled (PgBouncer, 6543) for the app
+  // directUrl = env("DIRECT_URL") // direct (5432) for `prisma migrate`
+}
+
+enum AppRole {
+  admin
+  user
+
+  @@map("app_role")
+}
+
+/// Per-user prediction history (written by getPredictionDetailed).
+model UserPrediction {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId           String   @map("user_id") @db.Uuid
+  competition      String
+  homeTeam         String   @map("home_team")
+  awayTeam         String   @map("away_team")
+  fixture          String
+  predictedOutcome String?  @map("predicted_outcome")
+  confidence       Int?
+  method           String?
+  payload          Json     @default("{}")
+  result           String?
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("user_predictions")
+}
+
+/// Event log — powers dashboard views / streak / top-league and the daily limit.
+model UserActivity {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  activityType String   @map("activity_type")
+  meta         Json?
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("user_activity")
+}
+
+/// The user/credentials table (Auth.js Credentials provider reads this
+/// directly — no separate `User`/`Account`/`Session` adapter tables needed
+/// since sessions are JWT-based, not database-backed).
+model Profile {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email           String?   @unique
+  passwordHash    String?   @map("password_hash")
+  emailVerified   DateTime? @map("email_verified")
+  fullName        String?   @map("full_name")
+  avatarUrl       String?   @map("avatar_url")
+  ageConfirmed    Boolean   @default(false) @map("age_confirmed")
+  dailyViewLimit  Int       @default(0) @map("daily_view_limit")
+  notifyDailyTips Boolean   @default(false) @map("notify_daily_tips")
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  @@map("profiles")
+}
+
+/// Short-lived tokens for the "forgot password" flow.
+model PasswordResetToken {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  token     String   @unique
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
+model Plan {
+  id                         String         @id
+  name                       String
+  interval                   String
+  intervalDays               Int            @default(0) @map("interval_days")
+  priceNgn                   Int            @map("price_ngn")
+  dailyRecommendationLimit   Int            @default(0) @map("daily_recommendation_limit")
+  dailyCustomPredictionLimit Int            @default(0) @map("daily_custom_prediction_limit")
+  canUseAccumulator          Boolean        @default(false) @map("can_use_accumulator")
+  canExportHistory           Boolean        @default(false) @map("can_export_history")
+  isActive                   Boolean        @default(true) @map("is_active")
+  features                   Json           @default("{}")
+  sortOrder                  Int            @default(0) @map("sort_order")
+  subscriptions              Subscription[]
+  payments                   Payment[]
+
+  @@map("plans")
+}
+
+model Subscription {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId           String    @map("user_id") @db.Uuid
+  planId           String    @map("plan_id")
+  status           String    @default("trialing")
+  trialEndsAt      DateTime? @map("trial_ends_at") @db.Timestamptz(6)
+  currentPeriodEnd DateTime? @map("current_period_end") @db.Timestamptz(6)
+  paymentRef       String?   @map("payment_ref")
+  paymentProvider  String?   @map("payment_provider")
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
+  plan             Plan      @relation(fields: [planId], references: [id])
+
+  @@index([userId])
+  @@map("subscriptions")
+}
+
+/// One row per supported payment provider; admin-toggleable independently of
+/// whether server-side API keys are actually configured in env.
+model PaymentGatewayConfig {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  provider  String   @unique
+  enabled   Boolean  @default(false)
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  @@map("payment_gateway_config")
+}
+
+/// One row per checkout attempt — the source of truth for "did this user
+/// actually pay," verified server-side via the provider's verify API/webhook
+/// before a Subscription is ever activated.
+model Payment {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  planId      String   @map("plan_id")
+  provider    String
+  reference   String   @unique
+  providerRef String?  @map("provider_ref")
+  amountNgn   Int      @map("amount_ngn")
+  status      String   @default("pending")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+  plan        Plan     @relation(fields: [planId], references: [id])
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("payments")
+}
+
+model UserRole {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  role      AppRole  @default(user)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([userId])
+  @@map("user_roles")
+}
+
+model BetSlip {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  name         String?
+  picks        Json     @default("[]")
+  combinedOdds Decimal  @default(1) @map("combined_odds") @db.Decimal(8, 2)
+  status       String   @default("pending")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("bet_slips")
+}
+
+model Watchlist {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  entityType String   @map("entity_type")
+  entityName String   @map("entity_name")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([userId, entityType, entityName])
+  @@map("watchlist")
+}
+
+/// Global (not per-user).
+model PredictionCache {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  fixtureKey String   @map("fixture_key")
+  payload    Json
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("predictions_cache")
+}
+
+/// Legacy global recommendations table (dashboard now uses the Python API).
+model Recommendation {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  fixture    String
+  league     String
+  kickoff    DateTime @db.Timestamptz(6)
+  market     String
+  pick       String
+  confidence Int
+  odds       Decimal  @db.Decimal(8, 2)
+  result     String?
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("recommendations")
+}
+
+model AdminAuditLog {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  actorId      String   @map("actor_id") @db.Uuid
+  targetUserId String   @map("target_user_id") @db.Uuid
+  action       String
+  details      Json     @default("{}")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("admin_audit_log")
+}
