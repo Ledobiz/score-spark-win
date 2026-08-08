@@ -16,10 +16,10 @@ const bodySchema = z.object({
 /**
  * Auth-required detailed prediction (CLAUDE.md §6). On each call:
  *  1. authenticate + enforce the free-tier daily limit,
- *  2. log a `prediction_view` activity row,
- *  3. call /prediction/detailed (mock fallback in dev),
- *  4. persist the result to the user's history,
- *  5. return the payload.
+ *  2. call /prediction/detailed — 503 if the Python API is unreachable, with no
+ *     fabricated fallback and no charge against the daily limit,
+ *  3. log a `prediction_view` activity row + persist to history,
+ *  4. return the payload.
  * DB writes are wrapped so a storage failure never breaks a prediction. Every
  * write is scoped to the authenticated userId — there is no RLS.
  */
@@ -46,8 +46,16 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Count the view whether or not the external API is used, so the daily limit
-  // stays accurate.
+  const result = await fetchDetailed(data);
+  if (!result) {
+    return NextResponse.json(
+      { error: "Prediction service is currently unavailable. Please try again shortly." },
+      { status: 503 },
+    );
+  }
+
+  // Only count the view — against the daily limit — once we actually got a
+  // real prediction back.
   try {
     await prisma.userActivity.create({
       data: {
@@ -64,8 +72,6 @@ export async function POST(request: NextRequest) {
   } catch {
     // logging must never break a prediction
   }
-
-  const result = await fetchDetailed(data);
 
   // Persist to the user's prediction history so it loads on sign-in.
   try {

@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Lock, Plus, Trash2, Save } from "lucide-react";
+import { Inbox, Lock, Plus, Trash2, Save, WifiOff } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,14 +14,23 @@ import { useEntitlement } from "@/lib/use-entitlement";
 import type { BetSlipRow, SlipPick } from "@/app/api/bet-slips/route";
 import type { Recommendation } from "@/lib/predictions/types";
 
-async function fetchRecommendations(): Promise<Recommendation[]> {
+async function fetchRecommendations(): Promise<{
+  recommendations: Recommendation[];
+  unavailable?: boolean;
+}> {
   const res = await fetch("/api/recommendations");
   if (!res.ok) throw new Error("Failed to load tips");
-  const data = (await res.json()) as { recommendations: Recommendation[] };
-  return data.recommendations
-    .slice()
-    .sort((a, b) => b.confidence - a.confidence)
-    .slice(0, 40);
+  const data = (await res.json()) as {
+    recommendations: Recommendation[];
+    unavailable?: boolean;
+  };
+  return {
+    ...data,
+    recommendations: data.recommendations
+      .slice()
+      .sort((a, b) => b.confidence - a.confidence)
+      .slice(0, 40),
+  };
 }
 
 async function fetchSlips(): Promise<BetSlipRow[]> {
@@ -40,10 +50,11 @@ export default function AccumulatorPage() {
   const [name, setName] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const { data: recs, isLoading: recsLoading } = useQuery({
+  const { data: recsData, isLoading: recsLoading } = useQuery({
     queryKey: ["recommendations"],
     queryFn: fetchRecommendations,
   });
+  const recs = recsData?.recommendations;
   const { data: slips, isLoading: slipsLoading } = useQuery({
     queryKey: ["slips"],
     queryFn: fetchSlips,
@@ -128,6 +139,22 @@ export default function AccumulatorPage() {
           </div>
           <div className="max-h-[520px] divide-y divide-border overflow-y-auto">
             {recsLoading && <ListRowSkeleton count={6} />}
+            {!recsLoading && recs?.length === 0 && (
+              <EmptyState
+                icon={recsData?.unavailable ? WifiOff : Inbox}
+                bordered={false}
+                title={
+                  recsData?.unavailable
+                    ? "Prediction service unavailable"
+                    : "No tips available"
+                }
+                description={
+                  recsData?.unavailable
+                    ? "We couldn't reach the prediction service. Please try again shortly."
+                    : "Check back once today's recommendations are in."
+                }
+              />
+            )}
             {!recsLoading && recs?.map((r) => (
               <div
                 key={r.id}
@@ -163,9 +190,13 @@ export default function AccumulatorPage() {
             <h2 className="font-semibold">Your slip</h2>
             <div className="mt-3 space-y-2">
               {picks.length === 0 && (
-                <p className="text-sm text-muted-foreground">
-                  No picks yet. Add from the left.
-                </p>
+                <EmptyState
+                  icon={Plus}
+                  size="compact"
+                  bordered={false}
+                  title="No picks yet"
+                  description="Add tips from the list on the left to build your slip."
+                />
               )}
               {picks.map((p) => (
                 <div
@@ -215,16 +246,11 @@ export default function AccumulatorPage() {
             </Button>
           </Card>
 
-          {slipsLoading && (
-            <Card className="p-4">
-              <h3 className="mb-2 text-sm font-semibold">Recent slips</h3>
+          <Card className="p-4">
+            <h3 className="mb-2 text-sm font-semibold">Recent slips</h3>
+            {slipsLoading ? (
               <ListRowSkeleton count={2} />
-            </Card>
-          )}
-
-          {slips && slips.length > 0 && (
-            <Card className="p-4">
-              <h3 className="mb-2 text-sm font-semibold">Recent slips</h3>
+            ) : slips && slips.length > 0 ? (
               <div className="space-y-2">
                 {slips.map((s) => (
                   <div
@@ -243,8 +269,16 @@ export default function AccumulatorPage() {
                   </div>
                 ))}
               </div>
-            </Card>
-          )}
+            ) : (
+              <EmptyState
+                icon={Save}
+                size="compact"
+                bordered={false}
+                title="No saved slips yet"
+                description="Build and save an accumulator above to see it here."
+              />
+            )}
+          </Card>
         </div>
       </div>
     </>

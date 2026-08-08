@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { ChevronRight, Info, Lock, TrendingUp } from "lucide-react";
+import { CalendarX, ChevronRight, Info, Lock, TrendingUp, WifiOff } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,13 +20,15 @@ import type {
   PredictionResult,
 } from "@/lib/predictions/types";
 
-async function fetchLeagues(): Promise<{ leagues: League[] }> {
+async function fetchLeagues(): Promise<{ leagues: League[]; unavailable?: boolean }> {
   const res = await fetch("/api/leagues");
   if (!res.ok) throw new Error("Failed to load leagues");
   return res.json();
 }
 
-async function fetchFixtures(leagueId: string): Promise<{ fixtures: Fixture[] }> {
+async function fetchFixtures(
+  leagueId: string,
+): Promise<{ fixtures: Fixture[]; unavailable?: boolean }> {
   const res = await fetch(`/api/fixtures?league=${encodeURIComponent(leagueId)}`);
   if (!res.ok) throw new Error("Failed to load fixtures");
   return res.json();
@@ -76,9 +79,14 @@ export default function PredictionsPage() {
           league: leagueName,
         }),
       });
-      if (res.status === 429) {
+      if (res.status === 429 || res.status === 503) {
         const body = (await res.json().catch(() => null)) as { error?: string } | null;
-        toast.error(body?.error ?? "Daily limit reached. Upgrade for unlimited.");
+        toast.error(
+          body?.error ??
+            (res.status === 503
+              ? "Prediction service is currently unavailable. Please try again shortly."
+              : "Daily limit reached. Upgrade for unlimited."),
+        );
         return;
       }
       if (!res.ok) throw new Error("Prediction failed");
@@ -140,9 +148,25 @@ export default function PredictionsPage() {
         />
       )}
 
-      {step === 1 && !leaguesLoading && (
+      {step === 1 && !leaguesLoading && leagues && leagues.leagues.length === 0 && (
+        <EmptyState
+          icon={leagues.unavailable ? WifiOff : CalendarX}
+          title={
+            leagues.unavailable
+              ? "Prediction service unavailable"
+              : "No leagues available"
+          }
+          description={
+            leagues.unavailable
+              ? "We couldn't reach the prediction service. Please try again shortly."
+              : "There's nothing to show here right now — check back later."
+          }
+        />
+      )}
+
+      {step === 1 && !leaguesLoading && leagues && leagues.leagues.length > 0 && (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {leagues?.leagues.map((l) => (
+          {leagues.leagues.map((l) => (
             <button
               key={l.id}
               onClick={() => {
@@ -174,6 +198,20 @@ export default function PredictionsPage() {
           </Button>
           {fxLoading ? (
             <CardListSkeleton count={4} className="grid gap-3" />
+          ) : fixtures?.fixtures.length === 0 ? (
+            <EmptyState
+              icon={fixtures.unavailable ? WifiOff : CalendarX}
+              title={
+                fixtures.unavailable
+                  ? "Prediction service unavailable"
+                  : "No upcoming fixtures"
+              }
+              description={
+                fixtures.unavailable
+                  ? "We couldn't reach the prediction service. Please try again shortly."
+                  : "This league has nothing scheduled right now — try another league."
+              }
+            />
           ) : (
             <div className="grid gap-3">
               {fixtures?.fixtures.map((f) => (

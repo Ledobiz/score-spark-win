@@ -11,6 +11,7 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card } from "@/components/ui/card";
+import { FullScreenLoader } from "@/components/ui/full-screen-loader";
 import { Zap, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -50,6 +51,7 @@ function AuthForm() {
 
   const [googleLoading, setGoogleLoading] = useState(false);
   const [gsiReady, setGsiReady] = useState(false);
+  const [redirecting, setRedirecting] = useState<string | null>(null);
 
   const continueWithGoogle = () => {
     const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
@@ -71,10 +73,17 @@ function AuthForm() {
           const res = await signIn("google-popup", { code: response.code, redirect: false });
           if (res?.error) {
             toast.error("Could not sign in with Google");
+            setGoogleLoading(false);
             return;
           }
+          // Keep the button spinning and hand off to a full-page loader —
+          // otherwise the button flips back to idle for a moment while
+          // Next.js resolves the destination page, which reads as "did that
+          // work?" rather than "signing you in".
+          setRedirecting("Signing you in…");
           router.replace(POST_AUTH);
-        } finally {
+        } catch {
+          toast.error("Could not sign in with Google");
           setGoogleLoading(false);
         }
       },
@@ -104,10 +113,12 @@ function AuthForm() {
 
         const signInRes = await signIn("credentials", { email, password, redirect: false });
         if (signInRes?.error) throw new Error("Account created — please sign in");
+        setRedirecting("Setting up your account…");
         router.replace("/onboarding");
       } else if (mode === "signin") {
         const res = await signIn("credentials", { email, password, redirect: false });
         if (res?.error) throw new Error("Incorrect email or password");
+        setRedirecting("Signing you in…");
         router.replace(POST_AUTH);
       } else {
         await fetch("/api/auth/forgot-password", {
@@ -124,6 +135,10 @@ function AuthForm() {
       setLoading(false);
     }
   };
+
+  if (redirecting) {
+    return <FullScreenLoader title={redirecting} description="Just a moment…" />;
+  }
 
   return (
     <div className="grid min-h-screen place-items-center bg-background px-4 py-8">

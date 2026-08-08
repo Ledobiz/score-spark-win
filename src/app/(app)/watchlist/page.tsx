@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Star, Trash2, Plus } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -100,9 +101,13 @@ export default function WatchlistPage() {
       ) : (
       <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {items?.length === 0 && (
-          <p className="text-sm text-muted-foreground">
-            Nothing yet. Add teams or leagues you follow.
-          </p>
+          <div className="sm:col-span-2 lg:col-span-3">
+            <EmptyState
+              icon={Star}
+              title="Nothing on your watchlist yet"
+              description="Add teams or leagues you follow closely using the form above to keep tabs on them here."
+            />
+          </div>
         )}
         {items?.map((i) => (
           <Card key={i.id} className="flex items-center justify-between p-4">

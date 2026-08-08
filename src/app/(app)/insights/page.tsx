@@ -12,17 +12,17 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import { Target, TrendingUp } from "lucide-react";
+import { Clock, ListTree, Target, TrendingUp, WifiOff } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   StatCardGridSkeleton,
   ChartCardSkeleton,
   TableRowsSkeleton,
 } from "@/components/ui/skeletons";
 import type {
-  CalibrationBin,
   Insights,
   RecentPrediction,
   StatsBucket,
@@ -38,10 +38,6 @@ async function fetchInsights(): Promise<Insights | null> {
 
 const pct = (x: number | null | undefined) =>
   x == null ? "—" : `${Math.round(x * 100)}%`;
-
-// confidence may arrive as 0..1 or 0..100 depending on source.
-const confPct = (c: number | undefined) =>
-  c == null ? "—" : `${Math.round(c > 1 ? c : c * 100)}%`;
 
 export default function InsightsPage() {
   const { data: insights, isLoading } = useQuery({
@@ -60,24 +56,12 @@ export default function InsightsPage() {
   const byComp = insights?.stats.by_competition ?? {};
   const compRows = Object.entries(byComp).filter(([, b]) => b.settled > 0);
 
-  // Normalise calibration bins into { label, predicted, actual } where both exist.
-  const calData = calibration
-    .map((b: CalibrationBin, i) => {
-      const predicted = b.predicted ?? b.expected;
-      const actual = b.actual ?? b.observed ?? b.success_rate;
-      const label =
-        b.label ?? String(b.bucket ?? b.bin ?? `${i + 1}`);
-      const count = b.count ?? b.n ?? b.settled;
-      return predicted != null && actual != null
-        ? {
-            label,
-            Predicted: Math.round(predicted * 100),
-            Actual: Math.round(actual * 100),
-            count,
-          }
-        : null;
-    })
-    .filter((x): x is NonNullable<typeof x> => x !== null);
+  const calData = calibration.map((b) => ({
+    label: b.label,
+    Predicted: Math.round(b.predicted * 100),
+    Actual: Math.round(b.actual * 100),
+    count: b.count,
+  }));
 
   return (
     <>
@@ -109,11 +93,22 @@ export default function InsightsPage() {
         />
       </div>
 
-      {overall && overall.settled === 0 && (
-        <Card className="mt-4 border-dashed p-4 text-sm text-muted-foreground">
-          No predictions have settled yet. Accuracy and calibration populate here
-          as fixtures resolve.
-        </Card>
+      {insights?.unavailable && (
+        <EmptyState
+          icon={WifiOff}
+          className="mt-4"
+          title="Prediction service unavailable"
+          description="We couldn't reach the prediction service. Please try again shortly."
+        />
+      )}
+
+      {!insights?.unavailable && overall && overall.settled === 0 && (
+        <EmptyState
+          icon={Target}
+          className="mt-4"
+          title="No predictions have settled yet"
+          description="Accuracy and calibration populate here as fixtures resolve."
+        />
       )}
 
       {/* Confidence tiers */}
@@ -201,17 +196,28 @@ export default function InsightsPage() {
               </ComposedChart>
             </ResponsiveContainer>
           ) : (
-            <EmptyState>
-              Not enough settled predictions to plot calibration yet.
-            </EmptyState>
+            <EmptyState
+              icon={TrendingUp}
+              size="compact"
+              bordered={false}
+              className="h-[280px]"
+              title="Not enough data yet"
+              description="Not enough settled predictions to plot calibration yet."
+            />
           )}
         </Card>
       </section>
 
       {/* By competition */}
-      {compRows.length > 0 && (
-        <section className="mt-8">
-          <h2 className="mb-3 font-display text-xl font-bold">By competition</h2>
+      <section className="mt-8">
+        <h2 className="mb-3 font-display text-xl font-bold">By competition</h2>
+        {compRows.length === 0 ? (
+          <EmptyState
+            icon={ListTree}
+            title="No competition breakdown yet"
+            description="This fills in once your settled predictions span a few competitions."
+          />
+        ) : (
           <Card className="overflow-x-auto p-0">
             <table className="w-full text-sm">
               <thead>
@@ -236,8 +242,8 @@ export default function InsightsPage() {
               </tbody>
             </table>
           </Card>
-        </section>
-      )}
+        )}
+      </section>
 
       {/* Recent settled */}
       <section className="mt-8">
@@ -260,15 +266,13 @@ export default function InsightsPage() {
                 const correct = r.correct;
                 return (
                   <tr key={i} className="border-b border-border/50">
-                    <td className="p-3 font-medium">{r.fixture ?? "—"}</td>
+                    <td className="p-3 font-medium">{r.fixture}</td>
                     <td className="p-3 text-muted-foreground">
-                      {r.competition ?? r.league ?? "—"}
+                      {r.competition}
                     </td>
-                    <td className="p-3">
-                      {r.predicted_outcome ?? r.predicted ?? "—"}
-                    </td>
+                    <td className="p-3">{r.predicted_outcome}</td>
                     <td className="p-3 text-right font-mono">
-                      {confPct(r.confidence)}
+                      {pct(r.confidence)}
                     </td>
                     <td className="p-3 text-right">
                       {correct == null ? (
@@ -292,12 +296,13 @@ export default function InsightsPage() {
               })}
               {recent.length === 0 && (
                 <tr>
-                  <td
-                    colSpan={5}
-                    className="p-8 text-center text-muted-foreground"
-                  >
-                    No settled predictions yet — check back once fixtures
-                    resolve.
+                  <td colSpan={5} className="p-0">
+                    <EmptyState
+                      icon={Clock}
+                      bordered={false}
+                      title="No settled predictions yet"
+                      description="Check back once fixtures resolve to see results here."
+                    />
                   </td>
                 </tr>
               )}
@@ -404,12 +409,4 @@ function TierCard({
 
 function pctOrDash(x: number | null | undefined) {
   return x == null ? "—" : `${Math.round(x * 100)}%`;
-}
-
-function EmptyState({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="grid h-40 place-items-center rounded-lg border border-dashed border-border text-center text-sm text-muted-foreground">
-      <span className="max-w-xs px-4">{children}</span>
-    </div>
-  );
 }

@@ -14,12 +14,13 @@ import {
   Bar,
   CartesianGrid,
 } from "recharts";
-import { Lock, TrendingUp, Trophy, Flame, Eye } from "lucide-react";
+import { Lock, TrendingUp, Trophy, Flame, Eye, Inbox, BarChart3, WifiOff } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   StatCardGridSkeleton,
   ChartCardSkeleton,
@@ -38,11 +39,13 @@ const MARKETS = [
   "Over 2.5",
 ] as const;
 
-async function fetchRecommendations(): Promise<Recommendation[]> {
+async function fetchRecommendations(): Promise<{
+  recommendations: Recommendation[];
+  unavailable?: boolean;
+}> {
   const res = await fetch("/api/recommendations");
   if (!res.ok) throw new Error("Failed to load recommendations");
-  const data = (await res.json()) as { recommendations: Recommendation[] };
-  return data.recommendations;
+  return res.json();
 }
 
 async function fetchStats(): Promise<Stats> {
@@ -61,10 +64,11 @@ async function fetchActivity(): Promise<ActivityRow[]> {
 
 export default function DashboardPage() {
   const { data: ent, isLoading } = useEntitlement();
-  const { data: recs } = useQuery({
+  const { data: recsData } = useQuery({
     queryKey: ["recommendations"],
     queryFn: fetchRecommendations,
   });
+  const recs = recsData?.recommendations;
   const { data: stats } = useQuery({ queryKey: ["stats"], queryFn: fetchStats });
   const { data: activity } = useQuery({
     queryKey: ["activity"],
@@ -254,9 +258,14 @@ export default function DashboardPage() {
             <h3 className="mb-4 font-semibold">Top leagues (last 30 days)</h3>
             <div className="h-56">
               {topLeagues.length === 0 ? (
-                <div className="grid h-full place-items-center text-center text-sm text-muted-foreground">
-                  View some predictions to see your top leagues here.
-                </div>
+                <EmptyState
+                  icon={BarChart3}
+                  size="compact"
+                  bordered={false}
+                  className="h-full"
+                  title="No league activity yet"
+                  description="View some predictions to see your top leagues here."
+                />
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={topLeagues} layout="vertical" margin={{ left: 8 }}>
@@ -376,11 +385,21 @@ export default function DashboardPage() {
                         ))}
                         {!recsLoading && visible.length === 0 && (
                           <tr>
-                            <td
-                              colSpan={6}
-                              className="p-6 text-center text-muted-foreground"
-                            >
-                              No picks in this market yet.
+                            <td colSpan={6} className="p-0">
+                              <EmptyState
+                                icon={recsData?.unavailable ? WifiOff : Inbox}
+                                bordered={false}
+                                title={
+                                  recsData?.unavailable
+                                    ? "Prediction service unavailable"
+                                    : "No picks in this market yet"
+                                }
+                                description={
+                                  recsData?.unavailable
+                                    ? "We couldn't reach the prediction service. Please try again shortly."
+                                    : "Recommendations refresh throughout the day — check back soon or try another market tab."
+                                }
+                              />
                             </td>
                           </tr>
                         )}

@@ -148,6 +148,8 @@ export interface Stats {
   by_competition: Record<string, StatsBucket>;
   by_source?: Record<string, StatsBucket>;
   tiers?: Tiers;
+  /** true when the Python prediction API couldn't be reached — never a fabricated stat. */
+  unavailable?: boolean;
 }
 
 /** Confidence-tier track record — the core honest-value story (CLAUDE.md §7). */
@@ -164,34 +166,23 @@ export interface Tiers {
   double_chance: TierBucket;
 }
 
-/** One confidence-calibration bin. Fields are optional/defensive — the live API
- * returns [] until enough predictions settle, so exact keys aren't pinned. */
+/** One confidence-calibration bin (normalized from /insights in getInsights()). */
 export interface CalibrationBin {
-  bin?: number;
-  bucket?: string | number;
-  label?: string;
-  predicted?: number; // expected hit rate for the bin, 0..1
-  expected?: number;
-  actual?: number; // observed hit rate, 0..1
-  observed?: number;
-  success_rate?: number;
-  count?: number;
-  n?: number;
-  settled?: number;
+  label: string; // e.g. "60–70%"
+  predicted: number; // avg predicted confidence in the bin, 0..1
+  actual: number; // observed hit rate in the bin, 0..1
+  count: number;
 }
 
-/** One recently settled prediction (empty [] until results exist). Defensive. */
+/** One recently settled prediction (normalized from /insights in getInsights()). */
 export interface RecentPrediction {
-  fixture?: string;
-  competition?: string;
-  league?: string;
-  predicted_outcome?: string;
-  predicted?: string;
-  confidence?: number; // 0..1 or 0..100 depending on source
-  result?: string | null;
-  correct?: boolean | null;
-  kickoff?: string;
-  created_at?: string;
+  fixture: string;
+  competition: string;
+  predicted_outcome: string;
+  confidence: number; // 0..1
+  result: string | null;
+  correct: boolean | null;
+  created_at: string;
 }
 
 export interface Insights {
@@ -203,4 +194,6 @@ export interface Insights {
   tiers: Tiers;
   calibration: CalibrationBin[];
   recent: RecentPrediction[];
+  /** true when the Python prediction API couldn't be reached — data below is all-zero, not fabricated. */
+  unavailable?: boolean;
 }

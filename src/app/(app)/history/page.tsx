@@ -4,10 +4,11 @@ import Link from "next/link";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Download, Lock } from "lucide-react";
+import { Download, History as HistoryIcon, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   StatCardGridSkeleton,
   TableRowsSkeleton,
@@ -175,11 +176,14 @@ export default function HistoryPage() {
             })}
             {!isLoading && total === 0 && (
               <tr>
-                <td
-                  colSpan={6}
-                  className="p-8 text-center text-muted-foreground"
-                >
-                  No predictions yet — run one from the Predictions page.
+                <td colSpan={6} className="p-0">
+                  <EmptyState
+                    icon={HistoryIcon}
+                    bordered={false}
+                    title="No predictions yet"
+                    description="Run a custom prediction and it'll show up here."
+                    action={{ label: "Make a prediction", href: "/predictions" }}
+                  />
                 </td>
               </tr>
             )}

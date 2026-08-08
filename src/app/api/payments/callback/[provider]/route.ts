@@ -1,10 +1,16 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { verifyAndActivate } from "@/lib/payments";
-import { GATEWAY_PROVIDERS, type GatewayProvider } from "@/lib/payments/types";
+import { GATEWAY_PROVIDERS } from "@/lib/payments/types";
 
 // The gateway's hosted checkout redirects the browser back here after
 // payment. Flutterwave appends ?tx_ref&transaction_id, Paystack appends
 // ?reference (and ?trxref, same value).
+//
+// This route only builds a redirect — it does NOT call verifyAndActivate()
+// itself. That call is a network round-trip to the gateway and can take a
+// couple of seconds; doing it here would leave the browser on a blank tab
+// with no feedback for that whole window. Instead we hand off instantly to
+// `/payment/verifying`, a client page that shows a spinner while it performs
+// the actual verification via POST /api/payments/verify.
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ provider: string }> },
@@ -25,8 +31,10 @@ export async function GET(
     return NextResponse.redirect(`${appUrl}/onboarding?payment=failed`);
   }
 
-  const result = await verifyAndActivate(provider as GatewayProvider, { reference, transactionId });
-  return NextResponse.redirect(
-    `${appUrl}/onboarding?payment=${result.success ? "success" : "failed"}`,
-  );
+  const verifyUrl = new URL("/payment/verifying", appUrl);
+  verifyUrl.searchParams.set("provider", provider);
+  verifyUrl.searchParams.set("reference", reference);
+  if (transactionId) verifyUrl.searchParams.set("transactionId", transactionId);
+
+  return NextResponse.redirect(verifyUrl);
 }

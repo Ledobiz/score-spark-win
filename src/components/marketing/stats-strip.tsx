@@ -9,7 +9,7 @@ type StatsStripProps = {
 };
 
 export function StatsStrip({ stats, insights }: StatsStripProps) {
-  const accuracy = (stats.overall.success_rate ?? 0.545) * 100;
+  const accuracyRate = stats.overall.success_rate;
   const confidentTier = insights.tiers.confident;
   const confidentRate = confidentTier.success_rate;
 
@@ -29,9 +29,24 @@ export function StatsStrip({ stats, insights }: StatsStripProps) {
           <Reveal delay={0}>
             <StatTile
               icon={<LineChart className="h-5 w-5 text-primary" />}
-              value={<CountUp value={accuracy} decimals={1} suffix="%" className="font-display text-3xl font-bold" />}
+              value={
+                accuracyRate != null ? (
+                  <CountUp
+                    value={accuracyRate * 100}
+                    decimals={1}
+                    suffix="%"
+                    className="font-display text-3xl font-bold"
+                  />
+                ) : (
+                  <span className="font-display text-3xl font-bold">—</span>
+                )
+              }
               label="Real-world 1X2 accuracy"
-              hint="In line with the bookmaker's own line — the edge is in confidence tiers, not fantasy win rates."
+              hint={
+                stats.unavailable
+                  ? "Live stats are temporarily unavailable — check back shortly."
+                  : "In line with the bookmaker's own line — the edge is in confidence tiers, not fantasy win rates."
+              }
             />
           </Reveal>
           <Reveal delay={0.08}>

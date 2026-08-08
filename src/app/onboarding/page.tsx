@@ -7,6 +7,7 @@ import { Check, Loader2, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { FullScreenLoader } from "@/components/ui/full-screen-loader";
 import { startFreeTrial } from "./actions";
 import type { PlanRow } from "@/app/api/plans/route";
 
@@ -50,15 +51,25 @@ function OnboardingContent() {
     queryFn: fetchGateways,
   });
 
+  const payment = search.get("payment");
+
   useEffect(() => {
-    const payment = search.get("payment");
     if (payment === "success") {
       toast.success("Payment successful — welcome aboard!");
       router.replace("/dashboard");
     } else if (payment === "failed") {
       toast.error("Payment failed or was cancelled. Please try again.");
     }
-  }, [search, router]);
+  }, [payment, router]);
+
+  if (payment === "success") {
+    return (
+      <FullScreenLoader
+        title="Payment successful"
+        description="Taking you to your dashboard…"
+      />
+    );
+  }
 
   const paidPlans = plans?.filter((p) => p.priceNgn > 0) ?? [];
   const highlightId =
