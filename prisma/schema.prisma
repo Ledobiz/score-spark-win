@@ -11,7 +11,7 @@ generator client {
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL") // pooled (PgBouncer, 6543) for the app
-  // directUrl = env("DIRECT_URL") // direct (5432) for `prisma migrate`
+  directUrl = env("DIRECT_URL") // direct (5432) for `prisma migrate`
 }
 
 enum AppRole {
@@ -165,7 +165,7 @@ model BetSlip {
   userId       String   @map("user_id") @db.Uuid
   name         String?
   picks        Json     @default("[]")
-  combinedOdds Decimal  @default(1) @map("combined_odds") @db.Decimal(8, 2)
+  combinedOdds Decimal  @default(1) @map("combined_odds") @db.Decimal(14, 2)
   status       String   @default("pending")
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 

@@ -3,7 +3,16 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Inbox, Lock, Plus, Trash2, Save, WifiOff } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  Inbox,
+  Lock,
+  Plus,
+  Trash2,
+  Save,
+  WifiOff,
+} from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
@@ -49,6 +58,7 @@ export default function AccumulatorPage() {
   const [picks, setPicks] = useState<SlipPick[]>([]);
   const [name, setName] = useState("");
   const [saving, setSaving] = useState(false);
+  const [expandedSlipId, setExpandedSlipId] = useState<string | null>(null);
 
   const { data: recsData, isLoading: recsLoading } = useQuery({
     queryKey: ["recommendations"],
@@ -62,9 +72,14 @@ export default function AccumulatorPage() {
   });
 
   const combined = picks.reduce((acc, p) => acc * p.odds, 1);
+  const MAX_PICKS = 15;
 
   const add = (r: Recommendation) => {
     if (picks.find((p) => p.id === r.id)) return;
+    if (picks.length >= MAX_PICKS) {
+      toast.error(`You can add up to ${MAX_PICKS} picks per slip.`);
+      return;
+    }
     setPicks([
       ...picks,
       {
@@ -94,7 +109,10 @@ export default function AccumulatorPage() {
         toast.error("The accumulator is a paid feature.");
         return;
       }
-      if (!res.ok) throw new Error("Save failed");
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error || "Save failed");
+      }
       toast.success("Slip saved");
       setPicks([]);
       setName("");
@@ -252,22 +270,62 @@ export default function AccumulatorPage() {
               <ListRowSkeleton count={2} />
             ) : slips && slips.length > 0 ? (
               <div className="space-y-2">
-                {slips.map((s) => (
-                  <div
-                    key={s.id}
-                    className="flex items-center justify-between rounded-md border border-border p-2 text-xs"
-                  >
-                    <div>
-                      <div className="font-medium">{s.name}</div>
-                      <div className="text-muted-foreground">
-                        {s.picks.length} picks · {s.status}
-                      </div>
+                {slips.map((s) => {
+                  const expanded = expandedSlipId === s.id;
+                  return (
+                    <div
+                      key={s.id}
+                      className="rounded-md border border-border text-xs"
+                    >
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setExpandedSlipId(expanded ? null : s.id)
+                        }
+                        className="flex w-full items-center justify-between gap-2 p-2 text-left"
+                      >
+                        <div className="min-w-0">
+                          <div className="truncate font-medium">{s.name}</div>
+                          <div className="text-muted-foreground">
+                            {s.picks.length} picks · {s.status}
+                          </div>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-2">
+                          <span className="font-mono font-semibold text-primary">
+                            @{s.combinedOdds.toFixed(2)}
+                          </span>
+                          {expanded ? (
+                            <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" />
+                          ) : (
+                            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                          )}
+                        </div>
+                      </button>
+                      {expanded && (
+                        <div className="space-y-1.5 border-t border-border p-2">
+                          {s.picks.map((p) => (
+                            <div
+                              key={p.id}
+                              className="flex items-center justify-between gap-2"
+                            >
+                              <div className="min-w-0">
+                                <div className="truncate font-medium">
+                                  {p.fixture}
+                                </div>
+                                <div className="text-muted-foreground">
+                                  {p.market}: {p.pick}
+                                </div>
+                              </div>
+                              <span className="shrink-0 font-mono text-muted-foreground">
+                                @{p.odds.toFixed(2)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                    <span className="font-mono font-semibold text-primary">
-                      @{s.combinedOdds.toFixed(2)}
-                    </span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <EmptyState

@@ -23,8 +23,9 @@ npx tsc --noEmit        # typecheck (no separate test runner is configured)
 
 npm run db:pull        # prisma db pull
 npm run db:generate     # prisma generate
-npm run db:migrate      # prisma migrate dev — NEVER run against the shared/prod
-                         # database without explicit confirmation first
+npm run db:migrate      # prisma migrate dev — NEVER run unqualified against the
+                         # shared/prod database (see "Database — live data, no
+                         # resets" below for the actual safe workflow)
 npm run db:studio       # prisma studio
 ```
 
@@ -136,6 +137,37 @@ Required env vars (none set by default in this environment):
   request/response plumbing.
 - `src/app/(marketing pages)` — `auth`, `onboarding`, `privacy`, `terms`,
   `refund-policy`, `responsible-gambling`, `cookies`, `reset-password` are public.
+
+### Database — live data, no resets
+The Supabase Postgres DB this app talks to (both `DATABASE_URL` and `DIRECT_URL`
+in `.env.local`, host `aws-0-eu-west-1.pooler.supabase.com`) is **live with real
+user data**, not a disposable dev/staging DB. Never run anything that clears or
+resets it while developing or fixing features — no `prisma migrate reset`,
+`prisma db push --force-reset`, `TRUNCATE`, or `DROP TABLE`/`DROP COLUMN`
+without stopping and getting the user's explicit confirmation first. If a Prisma
+command itself prompts to reset because of drift, stop and ask — don't accept
+the prompt.
+
+Safe schema-change workflow:
+1. Edit `prisma/schema.prisma`.
+2. Generate the migration file only, without touching the DB:
+   `npx prisma migrate dev --name <description> --create-only`
+   (`npm run db:migrate` is aliased to plain `migrate dev`, which *does* apply
+   immediately — don't run it unqualified against the shared DB; always add
+   `--create-only`.)
+3. Review the generated SQL in `prisma/migrations/<timestamp>_<name>/migration.sql`
+   before applying anything.
+4. Apply it with `npx prisma migrate deploy` — forward-only, applies pending
+   migrations, never resets or drops data (unlike `migrate dev` run directly).
+5. Run `npm run db:generate` to regenerate the Prisma client against the new
+   schema.
+Prefer additive changes (widen a column, add a nullable column) over destructive
+ones (drop/rename) whenever a fix can be done that way.
+
+Note: `DATABASE_URL` is a PgBouncer pooled connection (port 6543) — the schema
+engine's advisory locks fail over it, so `directUrl` (`DIRECT_URL`, port 5432)
+must stay enabled in `prisma/schema.prisma`'s `datasource` block for migrations
+to work at all.
 
 ### Prisma model notes worth knowing before touching schema-adjacent code
 - `Profile` doubles as the credentials table (`passwordHash`, `emailVerified`) —

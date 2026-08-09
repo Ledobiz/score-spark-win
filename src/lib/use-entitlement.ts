@@ -13,6 +13,7 @@ export interface EntitlementResponse {
   } | null;
   planName: string | null;
   email: string | null;
+  planDailyCustomPredictionLimit: number;
 }
 
 async function fetchEntitlement(): Promise<EntitlementResponse | null> {

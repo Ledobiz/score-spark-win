@@ -77,8 +77,13 @@ export async function getRecommendations(): Promise<{
 }> {
   const ext = await callExternal("/recommendations", { limit: "500" });
   if (!ext) return { recommendations: [], unavailable: true };
+  const all = (ext as { recommendations: Recommendation[] }).recommendations;
+  const now = Date.now();
   return {
-    recommendations: (ext as { recommendations: Recommendation[] }).recommendations,
+    // Defense-in-depth: the Python API's own "today only" filter is date-based
+    // (not time-of-day), so it can still return fixtures that already kicked
+    // off. Never recommend/allow picks on a match that's already started.
+    recommendations: all.filter((r) => new Date(r.kickoff).getTime() > now),
   };
 }
 

@@ -13,6 +13,10 @@ export interface EntitlementPayload {
   todayCount: number;
   profile: EntitlementProfile | null;
   planName: string | null;
+  /** The plan's daily custom-prediction limit, before any personal
+   * "responsible gambling" tightening — the ceiling a user's own
+   * Profile.dailyViewLimit is allowed to set. */
+  planDailyCustomPredictionLimit: number;
 }
 
 /**
@@ -66,6 +70,7 @@ export async function loadEntitlement(userId: string): Promise<EntitlementPayloa
   // The user's own "responsible gambling" soft limit (Settings) can only
   // tighten the plan's daily custom-prediction limit, never loosen it. 0 means
   // the user hasn't set a personal limit.
+  const planDailyCustomPredictionLimit = entitlement.dailyCustomPredictionLimit;
   if (profileRow?.dailyViewLimit && profileRow.dailyViewLimit > 0) {
     entitlement.dailyCustomPredictionLimit = Math.min(
       entitlement.dailyCustomPredictionLimit,
@@ -84,5 +89,6 @@ export async function loadEntitlement(userId: string): Promise<EntitlementPayloa
         }
       : null,
     planName: sub?.plan?.name ?? null,
+    planDailyCustomPredictionLimit,
   };
 }

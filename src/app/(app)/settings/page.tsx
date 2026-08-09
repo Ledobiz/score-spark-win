@@ -43,10 +43,13 @@ function SettingsForm({ ent }: { ent: EntitlementResponse }) {
 
   const [fullName, setFullName] = useState(ent.profile?.fullName ?? "");
   const [notify, setNotify] = useState(ent.profile?.notifyDailyTips ?? true);
+  const planLimit = ent.planDailyCustomPredictionLimit;
   const [limitEnabled, setLimitEnabled] = useState(
     (ent.profile?.dailyViewLimit ?? 0) > 0,
   );
-  const [dailyLimit, setDailyLimit] = useState(ent.profile?.dailyViewLimit || 20);
+  const [dailyLimit, setDailyLimit] = useState(
+    Math.min(ent.profile?.dailyViewLimit || 20, planLimit),
+  );
   const [saving, setSaving] = useState(false);
   const [cancelling, setCancelling] = useState(false);
 
@@ -176,11 +179,19 @@ function SettingsForm({ ent }: { ent: EntitlementResponse }) {
                 id="dl"
                 type="number"
                 min={1}
-                max={500}
+                max={planLimit}
                 value={dailyLimit}
-                onChange={(ev) => setDailyLimit(Number(ev.target.value))}
+                onChange={(ev) =>
+                  setDailyLimit(
+                    Math.min(Math.max(Number(ev.target.value) || 1, 1), planLimit),
+                  )
+                }
                 className="max-w-[10rem]"
               />
+              <p className="text-xs text-muted-foreground">
+                Your {ent.planName ?? "current"} plan allows up to {planLimit} per
+                day — this can only make your limit stricter, not looser.
+              </p>
             </div>
           )}
         </Card>

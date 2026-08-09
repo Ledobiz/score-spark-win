@@ -53,9 +53,13 @@ const pickSchema = z.object({
   odds: z.number().positive(),
   confidence: z.number(),
 });
+// 15 legs matches typical bookmaker accumulator caps and keeps combined odds
+// (product of all leg odds) well inside the combined_odds Decimal(14,2) column.
+const MAX_PICKS = 15;
+const MAX_COMBINED_ODDS = 99_999_999_999.99;
 const createSchema = z.object({
   name: z.string().max(120).optional(),
-  picks: z.array(pickSchema).min(2),
+  picks: z.array(pickSchema).min(2).max(MAX_PICKS),
 });
 
 // POST — save a slip. Paid feature: the accumulator gate is enforced HERE, and
@@ -85,15 +89,31 @@ export async function POST(request: NextRequest) {
   const { name, picks } = parsed.data;
   const combinedOdds = picks.reduce((acc, p) => acc * p.odds, 1);
 
-  await prisma.betSlip.create({
-    data: {
-      userId: user.id,
-      name: name?.trim() || `Slip ${new Date().toLocaleDateString()}`,
-      picks: picks as unknown as Prisma.InputJsonValue,
-      combinedOdds,
-      status: "pending",
-    },
-  });
+  // Guard the DB's Decimal(14,2) column explicitly — some markets can carry
+  // high enough odds that even within MAX_PICKS legs the product overflows.
+  if (combinedOdds > MAX_COMBINED_ODDS) {
+    return NextResponse.json(
+      { error: "Combined odds too high — remove a pick and try again." },
+      { status: 400 },
+    );
+  }
+
+  try {
+    await prisma.betSlip.create({
+      data: {
+        userId: user.id,
+        name: name?.trim() || `Slip ${new Date().toLocaleDateString()}`,
+        picks: picks as unknown as Prisma.InputJsonValue,
+        combinedOdds,
+        status: "pending",
+      },
+    });
+  } catch {
+    return NextResponse.json(
+      { error: "Could not save slip. Please try again." },
+      { status: 500 },
+    );
+  }
 
   return NextResponse.json({ ok: true });
 }
