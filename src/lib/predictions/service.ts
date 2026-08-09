@@ -62,12 +62,23 @@ export async function fetchDetailed(data: {
   away: string;
   league: string;
   fixtureId: string;
+  kickoff?: string;
 }): Promise<DetailedPrediction | null> {
-  const ext = await callExternal("/prediction/detailed", {
+  const params: Record<string, string> = {
     league: data.league,
     home: data.home,
     away: data.away,
-  });
+  };
+  // Real match date, not when the prediction was requested — lets the Python
+  // API's settlement job match this specific fixture to its actual result
+  // instead of guessing by team names alone (see PredictionStore.settle()).
+  if (data.kickoff) {
+    const d = new Date(data.kickoff);
+    if (!Number.isNaN(d.getTime())) {
+      params.match_date = d.toISOString().slice(0, 10);
+    }
+  }
+  const ext = await callExternal("/prediction/detailed", params);
   return ext as DetailedPrediction | null;
 }
 
@@ -129,6 +140,8 @@ interface RawRecentRow {
   actual: string | null;
   correct: number | null;
   created_at: string;
+  match_date: string | null;
+  source: string;
 }
 interface RawInsights {
   stats: Insights["stats"];
@@ -158,6 +171,8 @@ export async function getInsights(): Promise<Insights & { unavailable?: boolean 
       result: r.actual,
       correct: r.correct == null ? null : r.correct === 1,
       created_at: r.created_at,
+      match_date: r.match_date,
+      source: r.source,
     })),
   };
 }

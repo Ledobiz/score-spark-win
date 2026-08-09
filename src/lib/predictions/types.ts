@@ -183,6 +183,13 @@ export interface RecentPrediction {
   result: string | null;
   correct: boolean | null;
   created_at: string;
+  /** Date the match was actually played, e.g. "2025-10-31" — distinct from
+   * created_at, which is when this row was (re)written to the DB and can be
+   * far more recent than the match itself for backtest-sourced rows. */
+  match_date: string | null;
+  /** "backtest" / "provider_backtest" rows are historical out-of-sample
+   * validation, not a live result the platform just settled. */
+  source: string;
 }
 
 export interface Insights {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { format } from "date-fns";
 import {
   Bar,
   Line,
@@ -38,6 +39,18 @@ async function fetchInsights(): Promise<Insights | null> {
 
 const pct = (x: number | null | undefined) =>
   x == null ? "—" : `${Math.round(x * 100)}%`;
+
+const isHistorical = (source: string) =>
+  source === "backtest" || source === "provider_backtest";
+
+const matchDateLabel = (r: RecentPrediction) => {
+  if (!r.match_date) return null;
+  try {
+    return format(new Date(r.match_date), "MMM d, yyyy");
+  } catch {
+    return r.match_date;
+  }
+};
 
 export default function InsightsPage() {
   const { data: insights, isLoading } = useQuery({
@@ -218,38 +231,61 @@ export default function InsightsPage() {
             description="This fills in once your settled predictions span a few competitions."
           />
         ) : (
-          <Card className="overflow-x-auto p-0">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border bg-secondary/40 text-left text-xs uppercase text-muted-foreground">
-                  <th className="p-3">Competition</th>
-                  <th className="p-3 text-right">Settled</th>
-                  <th className="p-3 text-right">Correct</th>
-                  <th className="p-3 text-right">Accuracy</th>
-                </tr>
-              </thead>
-              <tbody>
-                {compRows.map(([name, b]) => (
-                  <tr key={name} className="border-b border-border/50">
-                    <td className="p-3 font-medium">{name}</td>
-                    <td className="p-3 text-right font-mono">{b.settled}</td>
-                    <td className="p-3 text-right font-mono">{b.correct}</td>
-                    <td className="p-3 text-right font-mono">
-                      {pct(b.success_rate)}
-                    </td>
+          <>
+            {/* Card list — small screens, avoids a horizontally-scrolling table */}
+            <div className="grid gap-3 sm:hidden">
+              {compRows.map(([name, b]) => (
+                <Card key={name} className="flex items-center justify-between p-4">
+                  <div className="min-w-0">
+                    <p className="truncate font-medium">{name}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {b.settled} settled · {b.correct} correct
+                    </p>
+                  </div>
+                  <span className="shrink-0 font-mono font-semibold">
+                    {pct(b.success_rate)}
+                  </span>
+                </Card>
+              ))}
+            </div>
+
+            <Card className="hidden overflow-x-auto p-0 sm:block">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-secondary/40 text-left text-xs uppercase text-muted-foreground">
+                    <th className="p-3">Competition</th>
+                    <th className="p-3 text-right">Settled</th>
+                    <th className="p-3 text-right">Correct</th>
+                    <th className="p-3 text-right">Accuracy</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </Card>
+                </thead>
+                <tbody>
+                  {compRows.map(([name, b]) => (
+                    <tr key={name} className="border-b border-border/50">
+                      <td className="p-3 font-medium">{name}</td>
+                      <td className="p-3 text-right font-mono">{b.settled}</td>
+                      <td className="p-3 text-right font-mono">{b.correct}</td>
+                      <td className="p-3 text-right font-mono">
+                        {pct(b.success_rate)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </Card>
+          </>
         )}
       </section>
 
       {/* Recent settled */}
       <section className="mt-8">
-        <h2 className="mb-3 font-display text-xl font-bold">
-          Recently settled
-        </h2>
+        <h2 className="font-display text-xl font-bold">Recently settled</h2>
+        <p className="mb-3 mt-1 text-sm text-muted-foreground">
+          Ordered by when each row was logged, not when the match was played —
+          rows tagged <span className="font-medium text-foreground">Backtest</span>{" "}
+          are historical out-of-sample validation matches (sometimes years old),
+          not something the platform just settled live.
+        </p>
         {recent.length === 0 ? (
           <Card className="overflow-hidden p-0">
             <EmptyState
@@ -272,7 +308,16 @@ export default function InsightsPage() {
                         <p className="truncate font-medium">{r.fixture}</p>
                         <p className="mt-0.5 truncate text-xs text-muted-foreground">
                           {r.competition}
+                          {matchDateLabel(r) && ` · ${matchDateLabel(r)}`}
                         </p>
+                        {isHistorical(r.source) && (
+                          <Badge
+                            variant="outline"
+                            className="mt-1 text-[10px] font-normal text-muted-foreground"
+                          >
+                            Backtest
+                          </Badge>
+                        )}
                       </div>
                       {correct == null ? (
                         <span className="shrink-0 text-xs text-muted-foreground">
@@ -310,6 +355,7 @@ export default function InsightsPage() {
                   <tr className="border-b border-border bg-secondary/40 text-left text-xs uppercase text-muted-foreground">
                     <th className="p-3">Fixture</th>
                     <th className="p-3">League</th>
+                    <th className="p-3">Match date</th>
                     <th className="p-3">Predicted</th>
                     <th className="p-3 text-right">Confidence</th>
                     <th className="p-3 text-right">Result</th>
@@ -320,9 +366,22 @@ export default function InsightsPage() {
                     const correct = r.correct;
                     return (
                       <tr key={i} className="border-b border-border/50">
-                        <td className="p-3 font-medium">{r.fixture}</td>
+                        <td className="p-3 font-medium">
+                          {r.fixture}
+                          {isHistorical(r.source) && (
+                            <Badge
+                              variant="outline"
+                              className="ml-2 text-[10px] font-normal text-muted-foreground"
+                            >
+                              Backtest
+                            </Badge>
+                          )}
+                        </td>
                         <td className="p-3 text-muted-foreground">
                           {r.competition}
+                        </td>
+                        <td className="p-3 text-muted-foreground">
+                          {matchDateLabel(r) ?? "—"}
                         </td>
                         <td className="p-3">{r.predicted_outcome}</td>
                         <td className="p-3 text-right font-mono">

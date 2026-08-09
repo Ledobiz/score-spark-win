@@ -11,6 +11,7 @@ const bodySchema = z.object({
   home: z.string().min(1),
   away: z.string().min(1),
   league: z.string().min(1),
+  kickoff: z.string().optional(),
 });
 
 /**

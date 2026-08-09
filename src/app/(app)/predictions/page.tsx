@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
@@ -45,6 +45,10 @@ export default function PredictionsPage() {
   const [prediction, setPrediction] = useState<PredictionResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [localViews, setLocalViews] = useState(0);
+  // Fixtures already predicted this session — the server only charges the
+  // daily limit once per fixture per day, so the optimistic local counter
+  // must mirror that or it double-counts a repeat view of the same fixture.
+  const viewedFixtureIds = useRef(new Set<string>());
 
   const { data: leagues, isLoading: leaguesLoading } = useQuery({
     queryKey: ["leagues"],
@@ -77,6 +81,7 @@ export default function PredictionsPage() {
           home: fx.home,
           away: fx.away,
           league: leagueName,
+          kickoff: fx.kickoff,
         }),
       });
       if (res.status === 429 || res.status === 503) {
@@ -94,7 +99,10 @@ export default function PredictionsPage() {
       stashDetailed(detailed);
       setPrediction(detailed.simple);
       setStep(3);
-      setLocalViews((v) => v + 1);
+      if (!viewedFixtureIds.current.has(fx.id)) {
+        viewedFixtureIds.current.add(fx.id);
+        setLocalViews((v) => v + 1);
+      }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed");
     } finally {

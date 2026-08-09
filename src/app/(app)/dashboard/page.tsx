@@ -14,7 +14,18 @@ import {
   Bar,
   CartesianGrid,
 } from "recharts";
-import { Lock, TrendingUp, Trophy, Flame, Eye, Inbox, BarChart3, WifiOff } from "lucide-react";
+import {
+  Lock,
+  TrendingUp,
+  Trophy,
+  Flame,
+  Eye,
+  Inbox,
+  BarChart3,
+  WifiOff,
+  AlertTriangle,
+  AlertCircle,
+} from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -140,6 +151,13 @@ export default function DashboardPage() {
       ? Math.round(stats.overall.success_rate * 100)
       : null;
 
+  // A paid subscription's status stays "active" in the DB until the user
+  // resubscribes — there's no background job that flips it — so "expired"
+  // has to be derived from currentPeriodEnd having already passed rather
+  // than read off `status` directly.
+  const paidExpired = e.status === "active" && !e.isPaid;
+  const paidExpiringSoon = e.isPaid && e.daysLeft !== null && e.daysLeft <= 3;
+
   return (
     <>
       {/* Header */}
@@ -161,14 +179,35 @@ export default function DashboardPage() {
               Trial: {e.daysLeft}d left
             </span>
           )}
-          {e.isPaid && e.daysLeft !== null && (
+          {e.isPaid && e.daysLeft !== null && !paidExpiringSoon && (
             <span className="text-xs text-muted-foreground">
               Renews in {e.daysLeft}d
             </span>
           )}
+          {paidExpiringSoon && (
+            <Badge className="gap-1 border-transparent bg-warning text-warning-foreground">
+              <AlertTriangle className="h-3 w-3" />
+              Expires in {e.daysLeft}d
+            </Badge>
+          )}
+          {paidExpired && (
+            <Badge variant="destructive" className="gap-1">
+              <AlertCircle className="h-3 w-3" />
+              Subscription expired
+            </Badge>
+          )}
           {!e.isActive && (
             <Link href="/onboarding">
-              <Button size="sm">Choose plan</Button>
+              <Button size="sm">
+                {paidExpired ? "Resubscribe" : "Choose plan"}
+              </Button>
+            </Link>
+          )}
+          {paidExpiringSoon && (
+            <Link href="/onboarding">
+              <Button size="sm" variant="outline">
+                Renew now
+              </Button>
             </Link>
           )}
         </div>
@@ -325,9 +364,13 @@ export default function DashboardPage() {
           )}
         </div>
         <Tabs defaultValue="Home Win">
-          <TabsList className="flex w-full flex-wrap justify-start">
+          <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1.5 py-1.5">
             {MARKETS.map((m) => (
-              <TabsTrigger key={m} value={m}>
+              <TabsTrigger
+                key={m}
+                value={m}
+                className="min-h-9 px-3.5 py-2"
+              >
                 {m}
               </TabsTrigger>
             ))}
