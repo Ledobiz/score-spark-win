@@ -15,11 +15,17 @@ const bodySchema = z.object({
 
 /**
  * Auth-required detailed prediction (CLAUDE.md §6). On each call:
- *  1. authenticate + enforce the free-tier daily limit,
- *  2. call /prediction/detailed — 503 if the Python API is unreachable, with no
+ *  1. authenticate,
+ *  2. check whether this exact fixture was already viewed today — a repeat
+ *     look at the same fixture is free and never re-checked against the
+ *     daily limit, so a user re-opening the same match doesn't get double-
+ *     charged for it,
+ *  3. otherwise enforce the free-tier daily limit,
+ *  4. call /prediction/detailed — 503 if the Python API is unreachable, with no
  *     fabricated fallback and no charge against the daily limit,
- *  3. log a `prediction_view` activity row + persist to history,
- *  4. return the payload.
+ *  5. log a `prediction_view` activity row (skipped for repeat views, so the
+ *     count used in step 3 stays deduped by fixture) + persist to history,
+ *  6. return the payload.
  * DB writes are wrapped so a storage failure never breaks a prediction. Every
  * write is scoped to the authenticated userId — there is no RLS.
  */
@@ -35,15 +41,29 @@ export async function POST(request: NextRequest) {
   }
   const data = parsed.data;
 
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+  const alreadyViewedToday = await prisma.userActivity.findFirst({
+    where: {
+      userId: user.id,
+      activityType: "prediction_view",
+      createdAt: { gte: startOfDay },
+      meta: { path: ["fixtureId"], equals: data.fixtureId },
+    },
+  });
+
   // Enforce the daily prediction limit — sourced from the user's plan (and
-  // tightened further by their personal "responsible gambling" limit, if set).
-  const { entitlement, todayCount } = await loadEntitlement(user.id);
-  const dailyLimit = entitlement.dailyCustomPredictionLimit;
-  if (todayCount >= dailyLimit) {
-    return NextResponse.json(
-      { error: `Daily limit (${dailyLimit}) reached. Upgrade for unlimited.` },
-      { status: 429 },
-    );
+  // tightened further by their personal "responsible gambling" limit, if
+  // set) — but only for fixtures not already viewed today.
+  if (!alreadyViewedToday) {
+    const { entitlement, todayCount } = await loadEntitlement(user.id);
+    const dailyLimit = entitlement.dailyCustomPredictionLimit;
+    if (todayCount >= dailyLimit) {
+      return NextResponse.json(
+        { error: `Daily limit (${dailyLimit}) reached. Upgrade for unlimited.` },
+        { status: 429 },
+      );
+    }
   }
 
   const result = await fetchDetailed(data);
@@ -55,22 +75,24 @@ export async function POST(request: NextRequest) {
   }
 
   // Only count the view — against the daily limit — once we actually got a
-  // real prediction back.
-  try {
-    await prisma.userActivity.create({
-      data: {
-        userId: user.id,
-        activityType: "prediction_view",
-        meta: {
-          fixtureId: data.fixtureId,
-          home: data.home,
-          away: data.away,
-          league: data.league,
+  // real prediction back, and only the first time today for this fixture.
+  if (!alreadyViewedToday) {
+    try {
+      await prisma.userActivity.create({
+        data: {
+          userId: user.id,
+          activityType: "prediction_view",
+          meta: {
+            fixtureId: data.fixtureId,
+            home: data.home,
+            away: data.away,
+            league: data.league,
+          },
         },
-      },
-    });
-  } catch {
-    // logging must never break a prediction
+      });
+    } catch {
+      // logging must never break a prediction
+    }
   }
 
   // Persist to the user's prediction history so it loads on sign-in.
