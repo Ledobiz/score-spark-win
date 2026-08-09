@@ -1,28 +1,32 @@
-import { SiteHeader } from "@/components/marketing/site-header";
-import { Hero } from "@/components/marketing/hero";
-import { StatsStrip } from "@/components/marketing/stats-strip";
-import { FeaturesGrid } from "@/components/marketing/features-grid";
-import { HowItWorks } from "@/components/marketing/how-it-works";
-import { MarketsShowcase } from "@/components/marketing/markets-showcase";
+import { SiteHeader } from "@/components/shuzam/site-header";
+import { Hero } from "@/components/shuzam/hero";
+import { IntroSection } from "@/components/shuzam/intro-section";
+import { ExploreGrid } from "@/components/shuzam/explore-grid";
+import { DataVisualization } from "@/components/shuzam/data-visualization";
+import { EducationSection } from "@/components/shuzam/education-section";
+import { ProductPreview } from "@/components/shuzam/product-preview";
+import { BrandStory } from "@/components/shuzam/brand-story";
+import { CtaSection } from "@/components/shuzam/cta-section";
+import { SiteFooter } from "@/components/shuzam/site-footer";
 import { Pricing } from "@/components/marketing/pricing";
-import { CtaBanner } from "@/components/marketing/cta-banner";
-import { SiteFooter } from "@/components/marketing/site-footer";
 import { getInsights, getStats } from "@/lib/predictions/service";
 
 export default async function Home() {
   const [stats, insights] = await Promise.all([getStats(), getInsights()]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="theme-shuzam min-h-screen bg-background text-foreground">
       <SiteHeader />
       <main>
         <Hero />
-        <StatsStrip stats={stats} insights={insights} />
-        <FeaturesGrid />
-        <HowItWorks />
-        <MarketsShowcase />
+        <IntroSection stats={stats} insights={insights} />
+        <ExploreGrid />
+        <DataVisualization />
+        <EducationSection />
+        <ProductPreview />
+        <BrandStory />
         <Pricing />
-        <CtaBanner />
+        <CtaSection />
       </main>
       <SiteFooter />
     </div>

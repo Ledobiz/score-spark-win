@@ -45,86 +45,152 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
   --font-sans: var(--font-inter), "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-space-grotesk), "Space Grotesk", "Inter", ui-sans-serif, sans-serif;
+  --font-display: var(--font-sora), var(--font-space-grotesk), "Sora", ui-sans-serif, sans-serif;
 }
 
+/*
+  SHUZAM brand palette (navy + electric lime) applied app-wide — dashboard, admin,
+  auth, and legal pages all read these same :root/.dark tokens, so the whole product
+  matches the marketing site instead of just the public pages.
+*/
 :root {
-  --radius: 0.75rem;
-  --background: oklch(0.98 0.005 240);
-  --foreground: oklch(0.16 0.02 250);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.16 0.02 250);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.16 0.02 250);
-  --primary: oklch(0.56 0.2 258);
-  --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.94 0.01 240);
-  --secondary-foreground: oklch(0.2 0.02 250);
-  --muted: oklch(0.95 0.008 240);
-  --muted-foreground: oklch(0.5 0.02 250);
-  --accent: oklch(0.56 0.2 258);
-  --accent-foreground: oklch(0.99 0 0);
+  --radius: 0.625rem;
+  --background: #ffffff;
+  --foreground: #111a2e;
+  --card: #ffffff;
+  --card-foreground: #111a2e;
+  --popover: #ffffff;
+  --popover-foreground: #111a2e;
+  --primary: #111a2e;
+  --primary-foreground: #ffffff;
+  --secondary: #f2f4f8;
+  --secondary-foreground: #111a2e;
+  --muted: #f5f6f9;
+  --muted-foreground: #5b6478;
+  --accent: #b6f31c;
+  --accent-foreground: #111a2e;
   --destructive: oklch(0.62 0.22 25);
   --destructive-foreground: oklch(0.98 0 0);
   --success: oklch(0.63 0.18 145);
   --success-foreground: oklch(0.99 0 0);
   --warning: oklch(0.78 0.17 75);
   --warning-foreground: oklch(0.15 0.02 60);
-  --border: oklch(0.9 0.01 240);
-  --input: oklch(0.94 0.01 240);
-  --ring: oklch(0.56 0.2 258);
-  --chart-1: oklch(0.56 0.2 258);
-  --chart-2: oklch(0.63 0.18 145);
-  --chart-3: oklch(0.7 0.18 55);
-  --chart-4: oklch(0.62 0.22 310);
-  --chart-5: oklch(0.65 0.22 25);
-  --sidebar: oklch(0.96 0.008 240);
-  --sidebar-foreground: oklch(0.16 0.02 250);
-  --sidebar-primary: oklch(0.56 0.2 258);
-  --sidebar-primary-foreground: oklch(0.99 0 0);
-  --sidebar-accent: oklch(0.91 0.012 240);
-  --sidebar-accent-foreground: oklch(0.16 0.02 250);
-  --sidebar-border: oklch(0.89 0.01 240);
-  --sidebar-ring: oklch(0.56 0.2 258);
+  --border: #e4e7ee;
+  --input: #e4e7ee;
+  --ring: #b6f31c;
+  --chart-1: #111a2e;
+  --chart-2: #b6f31c;
+  --chart-3: #2fb8c4;
+  --chart-4: #f2a93c;
+  --chart-5: #8b6ff2;
+  --sidebar: #f7f8fb;
+  --sidebar-foreground: #111a2e;
+  --sidebar-primary: #111a2e;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e9ecf3;
+  --sidebar-accent-foreground: #111a2e;
+  --sidebar-border: #e4e7ee;
+  --sidebar-ring: #b6f31c;
 }
 
 .dark {
-  --background: oklch(0.13 0.015 250);
-  --foreground: oklch(0.97 0.005 240);
-  --card: oklch(0.18 0.02 250);
-  --card-foreground: oklch(0.97 0.005 240);
-  --popover: oklch(0.17 0.02 250);
-  --popover-foreground: oklch(0.97 0.005 240);
-  --primary: oklch(0.68 0.18 258);
-  --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.22 0.02 250);
-  --secondary-foreground: oklch(0.97 0.005 240);
-  --muted: oklch(0.22 0.02 250);
-  --muted-foreground: oklch(0.66 0.02 250);
-  --accent: oklch(0.68 0.18 258);
-  --accent-foreground: oklch(0.99 0 0);
+  --background: #0d1424;
+  --foreground: #f3f5fa;
+  --card: #131b30;
+  --card-foreground: #f3f5fa;
+  --popover: #131b30;
+  --popover-foreground: #f3f5fa;
+  --primary: #b6f31c;
+  --primary-foreground: #111a2e;
+  --secondary: #1b2440;
+  --secondary-foreground: #f3f5fa;
+  --muted: #19213a;
+  --muted-foreground: #8d97b3;
+  --accent: #b6f31c;
+  --accent-foreground: #111a2e;
   --destructive: oklch(0.68 0.22 22);
   --destructive-foreground: oklch(0.98 0 0);
   --success: oklch(0.75 0.19 145);
   --success-foreground: oklch(0.12 0.02 145);
   --warning: oklch(0.82 0.17 75);
   --warning-foreground: oklch(0.15 0.02 60);
-  --border: oklch(0.27 0.02 250);
-  --input: oklch(0.24 0.02 250);
-  --ring: oklch(0.68 0.18 258);
-  --chart-1: oklch(0.68 0.18 258);
-  --chart-2: oklch(0.75 0.19 145);
-  --chart-3: oklch(0.78 0.18 55);
-  --chart-4: oklch(0.7 0.22 310);
-  --chart-5: oklch(0.72 0.22 25);
-  --sidebar: oklch(0.16 0.018 250);
-  --sidebar-foreground: oklch(0.97 0.005 240);
-  --sidebar-primary: oklch(0.68 0.18 258);
-  --sidebar-primary-foreground: oklch(0.99 0 0);
-  --sidebar-accent: oklch(0.24 0.02 250);
-  --sidebar-accent-foreground: oklch(0.97 0.005 240);
-  --sidebar-border: oklch(0.26 0.02 250);
-  --sidebar-ring: oklch(0.68 0.18 258);
+  --border: #232d4c;
+  --input: #232d4c;
+  --ring: #b6f31c;
+  --chart-1: #b6f31c;
+  --chart-2: #2fb8c4;
+  --chart-3: #f2a93c;
+  --chart-4: #8b6ff2;
+  --chart-5: #ef7d6b;
+  --sidebar: #101a33;
+  --sidebar-foreground: #f3f5fa;
+  --sidebar-primary: #b6f31c;
+  --sidebar-primary-foreground: #111a2e;
+  --sidebar-accent: #1b2440;
+  --sidebar-accent-foreground: #f3f5fa;
+  --sidebar-border: #232d4c;
+  --sidebar-ring: #b6f31c;
+}
+
+/*
+  Kept as an explicit, self-contained override so the marketing Home/About pages
+  render the same light-first layout regardless of the dashboard's dark-by-default
+  theme setting above (values now match :root/.dark, this just pins them locally).
+*/
+.theme-shuzam {
+  --radius: 0.625rem;
+  --background: #ffffff;
+  --foreground: #111a2e;
+  --card: #ffffff;
+  --card-foreground: #111a2e;
+  --popover: #ffffff;
+  --popover-foreground: #111a2e;
+  --primary: #111a2e;
+  --primary-foreground: #ffffff;
+  --secondary: #f2f4f8;
+  --secondary-foreground: #111a2e;
+  --muted: #f5f6f9;
+  --muted-foreground: #5b6478;
+  --accent: #b6f31c;
+  --accent-foreground: #111a2e;
+  --destructive: oklch(0.62 0.22 25);
+  --destructive-foreground: oklch(0.98 0 0);
+  --border: #e4e7ee;
+  --input: #e4e7ee;
+  --ring: #b6f31c;
+  --chart-1: #111a2e;
+  --chart-2: #b6f31c;
+  --chart-3: #2fb8c4;
+  --chart-4: #f2a93c;
+  --chart-5: #8b6ff2;
+  --font-display: var(--font-sora), var(--font-space-grotesk), "Sora", ui-sans-serif, sans-serif;
+}
+
+.theme-shuzam .shuzam-dark {
+  --background: #0d1424;
+  --foreground: #f3f5fa;
+  --card: #131b30;
+  --card-foreground: #f3f5fa;
+  --popover: #131b30;
+  --popover-foreground: #f3f5fa;
+  --primary: #b6f31c;
+  --primary-foreground: #111a2e;
+  --secondary: #1b2440;
+  --secondary-foreground: #f3f5fa;
+  --muted: #19213a;
+  --muted-foreground: #8d97b3;
+  --accent: #b6f31c;
+  --accent-foreground: #111a2e;
+  --border: #232d4c;
+  --input: #232d4c;
+  --ring: #b6f31c;
+  --chart-1: #b6f31c;
+  --chart-2: #2fb8c4;
+  --chart-3: #f2a93c;
+  --chart-4: #8b6ff2;
+  --chart-5: #ef7d6b;
+  background-color: var(--background);
+  color: var(--foreground);
 }
 
 @layer base {
@@ -168,6 +234,18 @@
   background-clip: text;
   -webkit-background-clip: text;
   color: transparent;
+}
+
+@utility text-gradient-shuzam {
+  background: linear-gradient(115deg, var(--foreground) 15%, var(--accent) 55%, var(--foreground) 92%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+@utility bg-dot-pattern {
+  background-image: radial-gradient(color-mix(in oklab, var(--foreground) 14%, transparent) 1.5px, transparent 1.5px);
+  background-size: 26px 26px;
 }
 
 @utility mask-fade-x {

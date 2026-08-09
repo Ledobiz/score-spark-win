@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Space_Grotesk } from "next/font/google";
+import { Inter, Space_Grotesk, Sora } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 
@@ -15,10 +15,16 @@ const spaceGrotesk = Space_Grotesk({
   display: "swap",
 });
 
+const sora = Sora({
+  subsets: ["latin"],
+  variable: "--font-sora",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
-  title: "PredictScore — Data-driven football predictions",
+  title: "SHUZAM — Choose with insight.",
   description:
-    "Model-driven football (soccer) match predictions with honest confidence tiers: 1X2, BTTS, Over/Under, xG, and an accumulator builder.",
+    "SHUZAM is a sports intelligence and analytics platform that helps you understand the game through data, statistics, and intelligent analysis.",
 };
 
 export default function RootLayout({
@@ -28,7 +34,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${inter.variable} ${spaceGrotesk.variable}`}
+      className={`${inter.variable} ${spaceGrotesk.variable} ${sora.variable}`}
     >
       <body className="min-h-screen bg-background text-foreground antialiased">
         <Providers>{children}</Providers>

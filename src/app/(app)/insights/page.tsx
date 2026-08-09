@@ -250,38 +250,37 @@ export default function InsightsPage() {
         <h2 className="mb-3 font-display text-xl font-bold">
           Recently settled
         </h2>
-        <Card className="overflow-x-auto p-0">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-secondary/40 text-left text-xs uppercase text-muted-foreground">
-                <th className="p-3">Fixture</th>
-                <th className="p-3">League</th>
-                <th className="p-3">Predicted</th>
-                <th className="p-3 text-right">Confidence</th>
-                <th className="p-3 text-right">Result</th>
-              </tr>
-            </thead>
-            <tbody>
+        {recent.length === 0 ? (
+          <Card className="overflow-hidden p-0">
+            <EmptyState
+              icon={Clock}
+              bordered={false}
+              title="No settled predictions yet"
+              description="Check back once fixtures resolve to see results here."
+            />
+          </Card>
+        ) : (
+          <>
+            {/* Card list — small screens, avoids a horizontally-scrolling table */}
+            <div className="grid gap-3 sm:hidden">
               {recent.map((r: RecentPrediction, i) => {
                 const correct = r.correct;
                 return (
-                  <tr key={i} className="border-b border-border/50">
-                    <td className="p-3 font-medium">{r.fixture}</td>
-                    <td className="p-3 text-muted-foreground">
-                      {r.competition}
-                    </td>
-                    <td className="p-3">{r.predicted_outcome}</td>
-                    <td className="p-3 text-right font-mono">
-                      {pct(r.confidence)}
-                    </td>
-                    <td className="p-3 text-right">
+                  <Card key={i} className="p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate font-medium">{r.fixture}</p>
+                        <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                          {r.competition}
+                        </p>
+                      </div>
                       {correct == null ? (
-                        <span className="text-xs text-muted-foreground">
+                        <span className="shrink-0 text-xs text-muted-foreground">
                           {r.result ?? "—"}
                         </span>
                       ) : (
                         <span
-                          className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+                          className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${
                             correct
                               ? "bg-primary/15 text-primary"
                               : "bg-destructive/15 text-destructive"
@@ -290,25 +289,70 @@ export default function InsightsPage() {
                           {correct ? "Win" : "Loss"}
                         </span>
                       )}
-                    </td>
-                  </tr>
+                    </div>
+                    <div className="mt-3 flex items-center justify-between rounded-lg bg-secondary/40 px-3 py-2">
+                      <span className="text-sm font-semibold">
+                        {r.predicted_outcome}
+                      </span>
+                      <span className="font-mono text-sm text-muted-foreground">
+                        {pct(r.confidence)}
+                      </span>
+                    </div>
+                  </Card>
                 );
               })}
-              {recent.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="p-0">
-                    <EmptyState
-                      icon={Clock}
-                      bordered={false}
-                      title="No settled predictions yet"
-                      description="Check back once fixtures resolve to see results here."
-                    />
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </Card>
+            </div>
+
+            {/* Table — sm and up */}
+            <Card className="hidden overflow-x-auto p-0 sm:block">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-secondary/40 text-left text-xs uppercase text-muted-foreground">
+                    <th className="p-3">Fixture</th>
+                    <th className="p-3">League</th>
+                    <th className="p-3">Predicted</th>
+                    <th className="p-3 text-right">Confidence</th>
+                    <th className="p-3 text-right">Result</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recent.map((r: RecentPrediction, i) => {
+                    const correct = r.correct;
+                    return (
+                      <tr key={i} className="border-b border-border/50">
+                        <td className="p-3 font-medium">{r.fixture}</td>
+                        <td className="p-3 text-muted-foreground">
+                          {r.competition}
+                        </td>
+                        <td className="p-3">{r.predicted_outcome}</td>
+                        <td className="p-3 text-right font-mono">
+                          {pct(r.confidence)}
+                        </td>
+                        <td className="p-3 text-right">
+                          {correct == null ? (
+                            <span className="text-xs text-muted-foreground">
+                              {r.result ?? "—"}
+                            </span>
+                          ) : (
+                            <span
+                              className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+                                correct
+                                  ? "bg-primary/15 text-primary"
+                                  : "bg-destructive/15 text-destructive"
+                              }`}
+                            >
+                              {correct ? "Win" : "Loss"}
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </Card>
+          </>
+        )}
       </section>
     </>
   );

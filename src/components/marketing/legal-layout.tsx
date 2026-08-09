@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { SiteHeader } from "@/components/marketing/site-header";
-import { SiteFooter } from "@/components/marketing/site-footer";
+import { SiteHeader } from "@/components/shuzam/site-header";
+import { SiteFooter } from "@/components/shuzam/site-footer";
 
 export function LegalLayout({
   title,

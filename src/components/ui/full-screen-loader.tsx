@@ -1,4 +1,5 @@
-import { Loader2, Zap, TriangleAlert } from "lucide-react";
+import { Loader2, TriangleAlert } from "lucide-react";
+import { ShuzamMark } from "@/components/shuzam/logo";
 
 /**
  * Full-page branded status screen shown while a redirect is in flight (post
@@ -17,9 +18,7 @@ export function FullScreenLoader({
   return (
     <div className="grid min-h-screen place-items-center bg-background px-4">
       <div className="flex flex-col items-center gap-4 text-center">
-        <span className="grid h-12 w-12 place-items-center rounded-xl bg-primary text-primary-foreground">
-          <Zap className="h-6 w-6" />
-        </span>
+        <ShuzamMark className="h-12 w-12" />
         {variant === "loading" ? (
           <Loader2 className="h-7 w-7 animate-spin text-primary" />
         ) : (

@@ -3,11 +3,13 @@
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Loader2, Zap } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FullScreenLoader } from "@/components/ui/full-screen-loader";
+import { PlanCardGridSkeleton } from "@/components/ui/skeletons";
+import { ShuzamMark } from "@/components/shuzam/logo";
 import { startFreeTrial } from "./actions";
 import type { PlanRow } from "@/app/api/plans/route";
 
@@ -45,7 +47,10 @@ function OnboardingContent() {
   const queryClient = useQueryClient();
   const [busy, setBusy] = useState<string | null>(null);
 
-  const { data: plans } = useQuery({ queryKey: ["plans"], queryFn: fetchPlans });
+  const { data: plans, isLoading: plansLoading } = useQuery({
+    queryKey: ["plans"],
+    queryFn: fetchPlans,
+  });
   const { data: gateways } = useQuery({
     queryKey: ["payment-gateways"],
     queryFn: fetchGateways,
@@ -110,9 +115,7 @@ function OnboardingContent() {
     <div className="min-h-screen bg-background px-4 py-10 sm:px-6">
       <div className="mx-auto max-w-6xl">
         <div className="mb-10 text-center">
-          <div className="mx-auto grid h-12 w-12 place-items-center rounded-xl bg-primary text-primary-foreground">
-            <Zap className="h-6 w-6" />
-          </div>
+          <ShuzamMark className="mx-auto h-12 w-12" />
           <h1 className="mt-4 font-display text-3xl font-bold sm:text-4xl">
             Pick your plan
           </h1>
@@ -121,6 +124,9 @@ function OnboardingContent() {
             required. Cancel anytime.
           </p>
         </div>
+        {plansLoading ? (
+          <PlanCardGridSkeleton />
+        ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {plans?.map((p) => {
             const highlight = p.id === highlightId;
@@ -211,6 +217,7 @@ function OnboardingContent() {
             );
           })}
         </div>
+        )}
         <div className="mt-10 rounded-xl border border-border bg-secondary/40 p-4 text-center text-xs text-muted-foreground">
           {gateways && gateways.length > 0 ? (
             <p>

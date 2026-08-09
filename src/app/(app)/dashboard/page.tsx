@@ -25,6 +25,7 @@ import {
   StatCardGridSkeleton,
   ChartCardSkeleton,
   TableRowsSkeleton,
+  ListRowSkeleton,
 } from "@/components/ui/skeletons";
 import { useEntitlement } from "@/lib/use-entitlement";
 import type { Recommendation, Stats } from "@/lib/predictions/types";
@@ -337,88 +338,149 @@ export default function DashboardPage() {
             const locked = all.length - visible.length;
             return (
               <TabsContent key={m} value={m} className="mt-4">
-                <Card className="overflow-hidden p-0">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b border-border bg-secondary/40 text-left text-xs uppercase text-muted-foreground">
-                          <th className="p-3">Fixture</th>
-                          <th className="p-3">League</th>
-                          <th className="whitespace-nowrap p-3">Kickoff</th>
-                          <th className="p-3">Pick</th>
-                          <th className="p-3 text-right">Confidence</th>
-                          <th className="p-3 text-right">Odds</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {recsLoading && (
-                          <TableRowsSkeleton rows={4} cols={6} />
-                        )}
-                        {!recsLoading && visible.map((r) => (
-                          <tr
-                            key={r.id}
-                            className="border-b border-border/50 hover:bg-secondary/30"
-                          >
-                            <td className="p-3 font-medium">{r.fixture}</td>
-                            <td className="p-3 text-muted-foreground">
-                              {r.league}
-                            </td>
-                            <td className="whitespace-nowrap p-3 text-muted-foreground">
-                              {format(new Date(r.kickoff), "MMM d, HH:mm")}
-                            </td>
-                            <td className="p-3">{r.pick}</td>
-                            <td className="p-3 text-right">
-                              <span
-                                className={
-                                  r.confidence >= 80
-                                    ? "font-semibold text-primary"
-                                    : ""
-                                }
-                              >
-                                {r.confidence}%
-                              </span>
-                            </td>
-                            <td className="p-3 text-right font-mono">
+                {recsLoading && (
+                  <>
+                    <div className="hidden sm:block">
+                      <Card className="overflow-hidden p-0">
+                        <table className="w-full text-sm">
+                          <tbody>
+                            <TableRowsSkeleton rows={4} cols={6} />
+                          </tbody>
+                        </table>
+                      </Card>
+                    </div>
+                    <div className="grid gap-3 sm:hidden">
+                      <ListRowSkeleton count={4} />
+                    </div>
+                  </>
+                )}
+
+                {!recsLoading && visible.length === 0 && (
+                  <Card className="overflow-hidden p-0">
+                    <EmptyState
+                      icon={recsData?.unavailable ? WifiOff : Inbox}
+                      bordered={false}
+                      title={
+                        recsData?.unavailable
+                          ? "Prediction service unavailable"
+                          : "No picks in this market yet"
+                      }
+                      description={
+                        recsData?.unavailable
+                          ? "We couldn't reach the prediction service. Please try again shortly."
+                          : "Recommendations refresh throughout the day — check back soon or try another market tab."
+                      }
+                    />
+                  </Card>
+                )}
+
+                {!recsLoading && visible.length > 0 && (
+                  <>
+                    {/* Card list — small screens, avoids a horizontally-scrolling table */}
+                    <div className="grid gap-3 sm:hidden">
+                      {visible.map((r) => (
+                        <Card key={r.id} className="p-4">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="truncate font-medium">{r.fixture}</p>
+                              <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                                {r.league} ·{" "}
+                                {format(new Date(r.kickoff), "MMM d, HH:mm")}
+                              </p>
+                            </div>
+                            <span
+                              className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${
+                                r.confidence >= 80
+                                  ? "bg-primary/15 text-primary"
+                                  : "bg-secondary text-muted-foreground"
+                              }`}
+                            >
+                              {r.confidence}%
+                            </span>
+                          </div>
+                          <div className="mt-3 flex items-center justify-between rounded-lg bg-secondary/40 px-3 py-2">
+                            <span className="text-sm font-semibold">{r.pick}</span>
+                            <span className="font-mono text-sm text-muted-foreground">
                               {r.odds.toFixed(2)}
-                            </td>
-                          </tr>
-                        ))}
-                        {!recsLoading && visible.length === 0 && (
-                          <tr>
-                            <td colSpan={6} className="p-0">
-                              <EmptyState
-                                icon={recsData?.unavailable ? WifiOff : Inbox}
-                                bordered={false}
-                                title={
-                                  recsData?.unavailable
-                                    ? "Prediction service unavailable"
-                                    : "No picks in this market yet"
-                                }
-                                description={
-                                  recsData?.unavailable
-                                    ? "We couldn't reach the prediction service. Please try again shortly."
-                                    : "Recommendations refresh throughout the day — check back soon or try another market tab."
-                                }
-                              />
-                            </td>
-                          </tr>
+                            </span>
+                          </div>
+                        </Card>
+                      ))}
+                      {locked > 0 && (
+                        <Card className="flex items-center justify-between p-4">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Lock className="h-4 w-4" />
+                            {locked} more pick{locked > 1 ? "s" : ""} hidden.
+                          </div>
+                          <Link href="/onboarding">
+                            <Button size="sm">Upgrade</Button>
+                          </Link>
+                        </Card>
+                      )}
+                    </div>
+
+                    {/* Table — sm and up */}
+                    <Card className="hidden overflow-hidden p-0 sm:block">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="border-b border-border bg-secondary/40 text-left text-xs uppercase text-muted-foreground">
+                              <th className="p-3">Fixture</th>
+                              <th className="p-3">League</th>
+                              <th className="whitespace-nowrap p-3">Kickoff</th>
+                              <th className="p-3">Pick</th>
+                              <th className="p-3 text-right">Confidence</th>
+                              <th className="p-3 text-right">Odds</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {visible.map((r) => (
+                              <tr
+                                key={r.id}
+                                className="border-b border-border/50 hover:bg-secondary/30"
+                              >
+                                <td className="p-3 font-medium">{r.fixture}</td>
+                                <td className="p-3 text-muted-foreground">
+                                  {r.league}
+                                </td>
+                                <td className="whitespace-nowrap p-3 text-muted-foreground">
+                                  {format(new Date(r.kickoff), "MMM d, HH:mm")}
+                                </td>
+                                <td className="p-3">{r.pick}</td>
+                                <td className="p-3 text-right">
+                                  <span
+                                    className={
+                                      r.confidence >= 80
+                                        ? "font-semibold text-primary"
+                                        : ""
+                                    }
+                                  >
+                                    {r.confidence}%
+                                  </span>
+                                </td>
+                                <td className="p-3 text-right font-mono">
+                                  {r.odds.toFixed(2)}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                        {locked > 0 && (
+                          <div className="flex items-center justify-between border-t border-border bg-secondary/40 p-4">
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Lock className="h-4 w-4" />
+                              {locked} more pick{locked > 1 ? "s" : ""} hidden —
+                              upgrade to unlock.
+                            </div>
+                            <Link href="/onboarding">
+                              <Button size="sm">Upgrade</Button>
+                            </Link>
+                          </div>
                         )}
-                      </tbody>
-                    </table>
-                    {locked > 0 && (
-                      <div className="flex items-center justify-between border-t border-border bg-secondary/40 p-4">
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Lock className="h-4 w-4" />
-                          {locked} more pick{locked > 1 ? "s" : ""} hidden —
-                          upgrade to unlock.
-                        </div>
-                        <Link href="/onboarding">
-                          <Button size="sm">Upgrade</Button>
-                        </Link>
                       </div>
-                    )}
-                  </div>
-                </Card>
+                    </Card>
+                  </>
+                )}
               </TabsContent>
             );
           })}

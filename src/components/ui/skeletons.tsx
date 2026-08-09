@@ -106,6 +106,31 @@ export function ListRowSkeleton({ count = 5 }: { count?: number }) {
   );
 }
 
+export function PlanCardSkeleton() {
+  return (
+    <Card className="flex flex-col p-6">
+      <Skeleton className="h-5 w-2/3" />
+      <Skeleton className="mt-4 h-8 w-1/2" />
+      <div className="mt-6 flex-1 space-y-3">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <Skeleton key={i} className="h-3.5 w-full" />
+        ))}
+      </div>
+      <Skeleton className="mt-6 h-10 w-full" />
+    </Card>
+  );
+}
+
+export function PlanCardGridSkeleton({ count = 4 }: { count?: number }) {
+  return (
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {Array.from({ length: count }).map((_, i) => (
+        <PlanCardSkeleton key={i} />
+      ))}
+    </div>
+  );
+}
+
 export function FormCardSkeleton({ lines = 3 }: { lines?: number }) {
   return (
     <Card className="p-6">

@@ -12,7 +12,8 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card } from "@/components/ui/card";
 import { FullScreenLoader } from "@/components/ui/full-screen-loader";
-import { Zap, Loader2 } from "lucide-react";
+import { ShuzamLogo } from "@/components/shuzam/logo";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 type Mode = "signin" | "signup" | "forgot";
@@ -148,14 +149,8 @@ function AuthForm() {
         onReady={() => setGsiReady(true)}
       />
       <div className="w-full max-w-md">
-        <Link
-          href="/"
-          className="mb-6 flex items-center justify-center gap-2 font-display text-lg font-bold"
-        >
-          <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-foreground">
-            <Zap className="h-4 w-4" />
-          </span>
-          PredictPro
+        <Link href="/" className="mb-6 flex items-center justify-center" aria-label="SHUZAM home">
+          <ShuzamLogo />
         </Link>
         <Card className="p-6">
           <h1 className="text-2xl font-bold">

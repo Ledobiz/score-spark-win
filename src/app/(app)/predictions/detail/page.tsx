@@ -140,7 +140,28 @@ export default function DetailPage() {
               ? ` (since ${d.head_to_head.first_year})`
               : ""}
           </p>
-          <div className="mt-3 overflow-x-auto">
+          {/* Card list — small screens, avoids a horizontally-scrolling table */}
+          <div className="mt-3 grid gap-2 sm:hidden">
+            {d.head_to_head.meetings.map((m, i) => (
+              <div
+                key={i}
+                className="flex items-center justify-between gap-3 rounded-lg border border-border/50 bg-secondary/20 px-3 py-2"
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-sm">
+                    {m.home} vs {m.away}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{m.year}</p>
+                </div>
+                <span className="shrink-0 font-mono text-sm font-semibold">
+                  {m.home_goals}–{m.away_goals}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* Table — sm and up */}
+          <div className="mt-3 hidden overflow-x-auto sm:block">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-left text-xs uppercase text-muted-foreground">

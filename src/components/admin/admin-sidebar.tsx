@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { signOut as nextAuthSignOut } from "next-auth/react";
+import { ShuzamMark } from "@/components/shuzam/logo";
 import {
   Sidebar,
   SidebarContent,
@@ -58,9 +59,7 @@ export function AdminSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader>
         <div className="flex items-center gap-2 px-2 py-1 font-display text-lg font-bold">
-          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground">
-            <Shield className="h-4 w-4" />
-          </span>
+          <ShuzamMark className="h-8 w-8 shrink-0" />
           <span className="group-data-[collapsible=icon]:hidden">
             Admin
           </span>

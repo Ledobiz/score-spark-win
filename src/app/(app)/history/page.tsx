@@ -12,6 +12,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import {
   StatCardGridSkeleton,
   TableRowsSkeleton,
+  ListRowSkeleton,
 } from "@/components/ui/skeletons";
 import { useEntitlement } from "@/lib/use-entitlement";
 import type { HistoryRow } from "@/lib/history";
@@ -125,43 +126,58 @@ export default function HistoryPage() {
       </div>
       )}
 
-      <Card className="mt-6 overflow-x-auto p-0">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border bg-secondary/40 text-left text-xs uppercase text-muted-foreground">
-              <th className="p-3">Fixture</th>
-              <th className="p-3">League</th>
-              <th className="p-3">Predicted</th>
-              <th className="p-3 text-right">Confidence</th>
-              <th className="whitespace-nowrap p-3">Date</th>
-              <th className="p-3 text-right">Result</th>
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading && <TableRowsSkeleton rows={6} cols={6} />}
-            {!isLoading && rows.map((h) => {
+      {isLoading && (
+        <>
+          <Card className="mt-6 hidden overflow-hidden p-0 sm:block">
+            <table className="w-full text-sm">
+              <tbody>
+                <TableRowsSkeleton rows={6} cols={6} />
+              </tbody>
+            </table>
+          </Card>
+          <div className="mt-6 grid gap-3 sm:hidden">
+            <ListRowSkeleton count={6} />
+          </div>
+        </>
+      )}
+
+      {!isLoading && total === 0 && (
+        <Card className="mt-6 overflow-hidden p-0">
+          <EmptyState
+            icon={HistoryIcon}
+            bordered={false}
+            title="No predictions yet"
+            description="Run a custom prediction and it'll show up here."
+            action={{ label: "Make a prediction", href: "/predictions" }}
+          />
+        </Card>
+      )}
+
+      {!isLoading && total > 0 && (
+        <>
+          {/* Card list — small screens, avoids a horizontally-scrolling table */}
+          <div className="mt-6 grid gap-3 sm:hidden">
+            {rows.map((h) => {
               const won = h.result
                 ? OUTCOME_KEY[h.predictedOutcome ?? ""] === h.result
                 : null;
               return (
-                <tr key={h.id} className="border-b border-border/50">
-                  <td className="p-3 font-medium">{h.fixture}</td>
-                  <td className="p-3 text-muted-foreground">{h.competition}</td>
-                  <td className="p-3">{h.predictedOutcome ?? "—"}</td>
-                  <td className="p-3 text-right font-mono">
-                    {h.confidence ?? "—"}%
-                  </td>
-                  <td className="whitespace-nowrap p-3 text-muted-foreground">
-                    {format(new Date(h.createdAt), "MMM d, HH:mm")}
-                  </td>
-                  <td className="p-3 text-right">
+                <Card key={h.id} className="p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate font-medium">{h.fixture}</p>
+                      <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                        {h.competition} ·{" "}
+                        {format(new Date(h.createdAt), "MMM d, HH:mm")}
+                      </p>
+                    </div>
                     {won === null ? (
-                      <span className="text-xs text-muted-foreground">
+                      <span className="shrink-0 text-xs text-muted-foreground">
                         Pending
                       </span>
                     ) : (
                       <span
-                        className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+                        className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${
                           won
                             ? "bg-primary/15 text-primary"
                             : "bg-destructive/15 text-destructive"
@@ -170,26 +186,74 @@ export default function HistoryPage() {
                         {won ? "Win" : "Loss"}
                       </span>
                     )}
-                  </td>
-                </tr>
+                  </div>
+                  <div className="mt-3 flex items-center justify-between rounded-lg bg-secondary/40 px-3 py-2">
+                    <span className="text-sm font-semibold">
+                      {h.predictedOutcome ?? "—"}
+                    </span>
+                    <span className="font-mono text-sm text-muted-foreground">
+                      {h.confidence ?? "—"}%
+                    </span>
+                  </div>
+                </Card>
               );
             })}
-            {!isLoading && total === 0 && (
-              <tr>
-                <td colSpan={6} className="p-0">
-                  <EmptyState
-                    icon={HistoryIcon}
-                    bordered={false}
-                    title="No predictions yet"
-                    description="Run a custom prediction and it'll show up here."
-                    action={{ label: "Make a prediction", href: "/predictions" }}
-                  />
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </Card>
+          </div>
+
+          {/* Table — sm and up */}
+          <Card className="mt-6 hidden overflow-x-auto p-0 sm:block">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border bg-secondary/40 text-left text-xs uppercase text-muted-foreground">
+                  <th className="p-3">Fixture</th>
+                  <th className="p-3">League</th>
+                  <th className="p-3">Predicted</th>
+                  <th className="p-3 text-right">Confidence</th>
+                  <th className="whitespace-nowrap p-3">Date</th>
+                  <th className="p-3 text-right">Result</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((h) => {
+                  const won = h.result
+                    ? OUTCOME_KEY[h.predictedOutcome ?? ""] === h.result
+                    : null;
+                  return (
+                    <tr key={h.id} className="border-b border-border/50">
+                      <td className="p-3 font-medium">{h.fixture}</td>
+                      <td className="p-3 text-muted-foreground">{h.competition}</td>
+                      <td className="p-3">{h.predictedOutcome ?? "—"}</td>
+                      <td className="p-3 text-right font-mono">
+                        {h.confidence ?? "—"}%
+                      </td>
+                      <td className="whitespace-nowrap p-3 text-muted-foreground">
+                        {format(new Date(h.createdAt), "MMM d, HH:mm")}
+                      </td>
+                      <td className="p-3 text-right">
+                        {won === null ? (
+                          <span className="text-xs text-muted-foreground">
+                            Pending
+                          </span>
+                        ) : (
+                          <span
+                            className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+                              won
+                                ? "bg-primary/15 text-primary"
+                                : "bg-destructive/15 text-destructive"
+                            }`}
+                          >
+                            {won ? "Win" : "Loss"}
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </Card>
+        </>
+      )}
 
       {!canExport && (
         <Card className="mt-4 flex items-center justify-between border-primary/40 bg-primary/5 p-4">
