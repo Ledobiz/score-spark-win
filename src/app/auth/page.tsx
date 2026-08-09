@@ -17,7 +17,7 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 type Mode = "signin" | "signup" | "forgot";
-const POST_AUTH = "/predictions";
+const POST_AUTH = "/dashboard";
 
 /** Minimal shape of the bits of Google Identity Services we use. */
 interface GoogleCodeClient {
@@ -71,7 +71,17 @@ function AuthForm() {
           return;
         }
         try {
-          const res = await signIn("google-popup", { code: response.code, redirect: false });
+          // The server round trip includes two calls out to Google
+          // (token exchange + verification) that this timeout backstops —
+          // without it, a stalled request leaves the button spinning
+          // forever with no way for the user to recover.
+          const timeout = new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error("timeout")), 15_000),
+          );
+          const res = await Promise.race([
+            signIn("google-popup", { code: response.code, redirect: false }),
+            timeout,
+          ]);
           if (res?.error) {
             toast.error("Could not sign in with Google");
             setGoogleLoading(false);
@@ -84,7 +94,7 @@ function AuthForm() {
           setRedirecting("Signing you in…");
           router.replace(POST_AUTH);
         } catch {
-          toast.error("Could not sign in with Google");
+          toast.error("Could not sign in with Google — please try again");
           setGoogleLoading(false);
         }
       },

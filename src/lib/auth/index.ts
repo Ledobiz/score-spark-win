@@ -16,24 +16,40 @@ async function verifyGoogleCode(code: string) {
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
   if (!clientId || !clientSecret) return null;
 
-  const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      code,
-      client_id: clientId,
-      client_secret: clientSecret,
-      redirect_uri: "postmessage",
-      grant_type: "authorization_code",
-    }),
-  });
+  // Both calls hit Google directly with no retry layer in front of them, so a
+  // slow/unresponsive response must not hang authorize() forever — that would
+  // leave the client's "Signing you in…" screen spinning indefinitely with no
+  // way to fail. 10s is generous for two small round-trips to Google.
+  let tokenRes: Response;
+  let infoRes: Response;
+  try {
+    tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        code,
+        client_id: clientId,
+        client_secret: clientSecret,
+        redirect_uri: "postmessage",
+        grant_type: "authorization_code",
+      }),
+      signal: AbortSignal.timeout(10_000),
+    });
+  } catch {
+    return null;
+  }
   if (!tokenRes.ok) return null;
   const tokens = (await tokenRes.json()) as { id_token?: string };
   if (!tokens.id_token) return null;
 
-  const infoRes = await fetch(
-    `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(tokens.id_token)}`,
-  );
+  try {
+    infoRes = await fetch(
+      `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(tokens.id_token)}`,
+      { signal: AbortSignal.timeout(10_000) },
+    );
+  } catch {
+    return null;
+  }
   if (!infoRes.ok) return null;
   const info = (await infoRes.json()) as {
     aud?: string;
