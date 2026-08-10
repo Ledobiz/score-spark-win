@@ -1,4 +1,15 @@
 User-agent: *
 Allow: /
-Disallow: /_authenticated/
+Disallow: /dashboard
+Disallow: /predictions
+Disallow: /accumulator
+Disallow: /history
+Disallow: /watchlist
+Disallow: /settings
+Disallow: /insights
+Disallow: /admin
+Disallow: /onboarding
 Disallow: /reset-password
+Disallow: /payment/
+
+Sitemap: https://shuzam.com/sitemap.xml

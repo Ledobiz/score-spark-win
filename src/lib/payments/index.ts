@@ -1,5 +1,7 @@
 import { randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
+import { sendEmail } from "@/lib/email";
+import { paymentReceiptEmailHtml, type PaymentReceiptInput } from "@/lib/email-templates";
 import { flutterwaveClient } from "./flutterwave";
 import { paystackClient } from "./paystack";
 import { GATEWAY_PROVIDERS, type GatewayProvider, type PaymentGatewayClient, type VerifyResult } from "./types";
@@ -135,5 +137,31 @@ export async function verifyAndActivate(
     await prisma.subscription.create({ data: { userId: payment.userId, ...subData } });
   }
 
+  await sendPaymentReceipt(payment.userId, {
+    planName: plan.name,
+    amountNgn: payment.amountNgn,
+    reference: payment.reference,
+    provider,
+    paidAt: new Date(),
+    periodEnd,
+  });
+
   return { success: true };
+}
+
+async function sendPaymentReceipt(userId: string, receipt: PaymentReceiptInput): Promise<void> {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+  if (!appUrl) return;
+
+  const user = await prisma.profile.findUnique({ where: { id: userId } });
+  if (!user?.email) return;
+
+  const result = await sendEmail({
+    to: user.email,
+    subject: "Your SHUZAM payment receipt",
+    html: paymentReceiptEmailHtml(receipt, appUrl),
+  });
+  if (!result.ok) {
+    console.error(`[payment-receipt] failed to email ${user.email}: ${result.error}`);
+  }
 }

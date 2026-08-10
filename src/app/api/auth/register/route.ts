@@ -4,6 +4,7 @@ import { z } from "zod";
 import bcrypt from "bcryptjs";
 import disposableDomains from "disposable-email-domains";
 import { prisma } from "@/lib/prisma";
+import { sendWelcomeEmail } from "@/lib/welcome-email";
 
 const DISPOSABLE_DOMAINS = new Set(disposableDomains);
 
@@ -47,7 +48,7 @@ export async function POST(request: Request) {
 
   const passwordHash = await bcrypt.hash(password, 12);
 
-  await prisma.profile.create({
+  const profile = await prisma.profile.create({
     data: {
       email,
       passwordHash,
@@ -56,6 +57,8 @@ export async function POST(request: Request) {
       emailVerified: new Date(),
     },
   });
+
+  await sendWelcomeEmail(profile.id);
 
   return NextResponse.json({ ok: true });
 }

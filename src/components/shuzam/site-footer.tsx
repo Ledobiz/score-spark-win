@@ -66,6 +66,19 @@ export function SiteFooter() {
             .
           </p>
         </div>
+
+        <div className="mt-6 border-t border-border/70 pt-6 text-xs text-muted-foreground">
+          <p>
+            SHUZAM® is a product of Ledobiz Technologies Limited. SHUZAM is a sports
+            intelligence and analytics platform providing data, statistics, and predictive
+            insights. It is not a bookmaker or gambling operator and does not accept or
+            facilitate wagers. All predictive outputs are statistical estimates for
+            informational and educational purposes only.
+          </p>
+          <p className="mt-2">
+            © {new Date().getFullYear()} Ledobiz Technologies Limited. All rights reserved.
+          </p>
+        </div>
       </div>
     </footer>
   );

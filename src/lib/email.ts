@@ -16,7 +16,7 @@ type SendEmailResult = { ok: true } | { ok: false; error: string };
  */
 export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult> {
   const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.EMAIL_FROM ?? "PredictScore <onboarding@resend.dev>";
+  const from = process.env.EMAIL_FROM ?? "SHUZAM <onboarding@resend.dev>";
   if (!apiKey) {
     return {
       ok: false,

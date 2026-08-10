@@ -21,10 +21,46 @@ const sora = Sora({
   display: "swap",
 });
 
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://shuzam.com";
+const TITLE = "SHUZAM — Choose with insight.";
+const DESCRIPTION =
+  "SHUZAM is a sports intelligence and analytics platform that helps you understand the game through data, statistics, and intelligent analysis.";
+
 export const metadata: Metadata = {
-  title: "SHUZAM — Choose with insight.",
-  description:
-    "SHUZAM is a sports intelligence and analytics platform that helps you understand the game through data, statistics, and intelligent analysis.",
+  metadataBase: new URL(APP_URL),
+  title: {
+    default: TITLE,
+    template: "%s — SHUZAM",
+  },
+  description: DESCRIPTION,
+  keywords: [
+    "sports analytics",
+    "football statistics",
+    "match analysis",
+    "sports intelligence",
+    "predictive insights",
+    "team statistics",
+  ],
+  applicationName: "SHUZAM",
+  authors: [{ name: "Ledobiz Technologies Limited" }],
+  robots: { index: true, follow: true },
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-icon.png",
+  },
+  openGraph: {
+    type: "website",
+    url: APP_URL,
+    siteName: "SHUZAM",
+    title: TITLE,
+    description: DESCRIPTION,
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: TITLE,
+    description: DESCRIPTION,
+  },
 };
 
 export default function RootLayout({

@@ -14,7 +14,7 @@ const FALLBACK_PLANS = [
     features: [
       "Daily recommendations across markets",
       "Custom predictions per fixture",
-      "Accumulator / bet-slip builder",
+      "Accumulator builder",
       "Prediction history",
     ],
   },

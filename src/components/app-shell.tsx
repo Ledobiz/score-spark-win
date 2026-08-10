@@ -45,6 +45,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               Predictions are informational, not guarantees. Never bet more than you
               can afford to lose. If gambling is a problem, seek help.
             </p>
+            <p className="mt-3 border-t border-border/60 pt-3">
+              SHUZAM® is a product of Ledobiz Technologies Limited. SHUZAM is a sports
+              intelligence and analytics platform providing data, statistics, and predictive
+              insights. It is not a bookmaker or gambling operator and does not accept or
+              facilitate wagers. All predictive outputs are statistical estimates for
+              informational and educational purposes only.
+            </p>
+            <p className="mt-1">
+              © {new Date().getFullYear()} Ledobiz Technologies Limited. All rights reserved.
+            </p>
           </div>
         </footer>
       </SidebarInset>

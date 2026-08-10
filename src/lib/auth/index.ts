@@ -2,6 +2,7 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { sendWelcomeEmail } from "@/lib/welcome-email";
 
 /**
  * Exchanges a Google Identity Services authorization code (obtained
@@ -113,6 +114,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const verified = await verifyGoogleCode(code);
         if (!verified) return null;
 
+        const existing = await prisma.profile.findUnique({
+          where: { email: verified.email },
+          select: { id: true },
+        });
         const profile = await prisma.profile.upsert({
           where: { email: verified.email },
           update: { emailVerified: new Date() },
@@ -123,6 +128,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             emailVerified: new Date(),
           },
         });
+        if (!existing) await sendWelcomeEmail(profile.id);
         return { id: profile.id, email: profile.email, name: profile.fullName };
       },
     }),
