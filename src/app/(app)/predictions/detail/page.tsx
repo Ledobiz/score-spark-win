@@ -75,8 +75,11 @@ export default function DetailPage() {
         <div className="text-xs uppercase text-muted-foreground">
           {d.competition}
         </div>
-        <div className="mt-3 grid grid-cols-[1fr_auto_1fr] items-center gap-4">
-          <div className="text-right font-display text-lg font-bold sm:text-2xl">
+        <div className="mt-3 grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-4">
+          <div
+            className="min-w-0 truncate text-right font-display text-base font-bold sm:text-2xl"
+            title={home}
+          >
             {home}
           </div>
           <div className="text-center">
@@ -87,7 +90,10 @@ export default function DetailPage() {
               most likely · {p0(mls.probability)}%
             </div>
           </div>
-          <div className="text-left font-display text-lg font-bold sm:text-2xl">
+          <div
+            className="min-w-0 truncate text-left font-display text-base font-bold sm:text-2xl"
+            title={away}
+          >
             {away}
           </div>
         </div>
@@ -98,14 +104,14 @@ export default function DetailPage() {
           <div style={{ width: `${pct(o.draw)}%` }} className="bg-amber-400" />
           <div style={{ width: `${pct(o.away_win)}%` }} className="bg-rose-400" />
         </div>
-        <div className="mt-2 flex justify-between text-xs">
-          <span>
+        <div className="mt-2 flex flex-wrap justify-between gap-x-3 gap-y-1 text-xs">
+          <span className="min-w-0 truncate">
             <b>{p0(o.home_win)}%</b> {home}
           </span>
-          <span>
+          <span className="shrink-0">
             <b>{p0(o.draw)}%</b> Draw
           </span>
-          <span>
+          <span className="min-w-0 truncate">
             <b>{p0(o.away_win)}%</b> {away}
           </span>
         </div>
@@ -236,11 +242,11 @@ export default function DetailPage() {
               className="bg-rose-400"
             />
           </div>
-          <div className="mt-2 flex justify-between text-sm">
-            <span>
+          <div className="mt-2 flex flex-wrap justify-between gap-x-3 gap-y-1 text-sm">
+            <span className="min-w-0 truncate">
               <b>{p0(d.knockout.home_advance)}%</b> {home}
             </span>
-            <span>
+            <span className="min-w-0 truncate">
               {away} <b>{p0(d.knockout.away_advance)}%</b>
             </span>
           </div>

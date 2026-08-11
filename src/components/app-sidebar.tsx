@@ -28,6 +28,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarSeparator,
+  useSidebar,
 } from "@/components/ui/sidebar";
 
 const NAV = [
@@ -45,11 +46,17 @@ export function AppSidebar() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { data: isAdmin } = useIsAdmin();
+  const { isMobile, setOpenMobile } = useSidebar();
 
   const isActive = (to: string) =>
     pathname === to || pathname.startsWith(`${to}/`);
 
+  const closeMobileMenu = () => {
+    if (isMobile) setOpenMobile(false);
+  };
+
   const signOut = async () => {
+    closeMobileMenu();
     await queryClient.cancelQueries();
     queryClient.clear();
     await nextAuthSignOut({ redirect: false });
@@ -61,6 +68,7 @@ export function AppSidebar() {
       <SidebarHeader>
         <Link
           href="/dashboard"
+          onClick={closeMobileMenu}
           className="flex items-center gap-2 px-2 py-1 font-display text-lg font-bold"
         >
           <ShuzamMark className="h-8 w-8 shrink-0" />
@@ -80,7 +88,7 @@ export function AppSidebar() {
                     isActive={isActive(n.to)}
                     tooltip={n.label}
                   >
-                    <Link href={n.to}>
+                    <Link href={n.to} onClick={closeMobileMenu}>
                       <n.icon />
                       <span>{n.label}</span>
                     </Link>
@@ -97,7 +105,7 @@ export function AppSidebar() {
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="Admin panel">
-                  <Link href="/admin">
+                  <Link href="/admin" onClick={closeMobileMenu}>
                     <Shield />
                     <span>Admin panel</span>
                   </Link>

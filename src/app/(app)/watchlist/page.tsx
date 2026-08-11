@@ -238,8 +238,8 @@ export default function WatchlistPage() {
       </p>
 
       <Card className="mt-6 p-4">
-        <div className="flex flex-wrap items-end gap-2">
-          <div>
+        <div className="flex flex-col flex-wrap gap-2 sm:flex-row sm:items-end">
+          <div className="w-full sm:w-auto">
             <label className="mb-1 block text-xs font-medium text-muted-foreground">
               Watch
             </label>
@@ -250,7 +250,7 @@ export default function WatchlistPage() {
                 setSelectedLeagueName("");
                 setSelectedTeamName("");
               }}
-              className="h-9 rounded-md border border-input bg-input px-3 text-sm"
+              className="h-9 w-full rounded-md border border-input bg-input px-3 text-sm sm:w-auto"
             >
               <option value="team">A team</option>
               <option value="league">A league</option>
@@ -258,7 +258,7 @@ export default function WatchlistPage() {
           </div>
 
           {entityType === "team" && (
-            <div>
+            <div className="w-full sm:w-auto">
               <label className="mb-1 block text-xs font-medium text-muted-foreground">
                 League
               </label>
@@ -269,7 +269,7 @@ export default function WatchlistPage() {
                   setSelectedTeamName("");
                 }}
                 disabled={leaguesLoading}
-                className="h-9 min-w-[180px] rounded-md border border-input bg-input px-3 text-sm"
+                className="h-9 w-full rounded-md border border-input bg-input px-3 text-sm sm:w-auto sm:min-w-[180px]"
               >
                 <option value="">
                   {leaguesLoading ? "Loading leagues…" : "Select a league"}
@@ -283,7 +283,7 @@ export default function WatchlistPage() {
             </div>
           )}
 
-          <div>
+          <div className="w-full sm:w-auto">
             <label className="mb-1 block text-xs font-medium text-muted-foreground">
               {entityType === "team" ? "Team" : "League"}
             </label>
@@ -292,7 +292,7 @@ export default function WatchlistPage() {
                 value={selectedTeamName}
                 onChange={(e) => setSelectedTeamName(e.target.value)}
                 disabled={!addLeagueId || fixturesLoading}
-                className="h-9 min-w-[200px] rounded-md border border-input bg-input px-3 text-sm"
+                className="h-9 w-full rounded-md border border-input bg-input px-3 text-sm sm:w-auto sm:min-w-[200px]"
               >
                 <option value="">
                   {!addLeagueId
@@ -314,7 +314,7 @@ export default function WatchlistPage() {
                 value={selectedLeagueName}
                 onChange={(e) => setSelectedLeagueName(e.target.value)}
                 disabled={leaguesLoading}
-                className="h-9 min-w-[200px] rounded-md border border-input bg-input px-3 text-sm"
+                className="h-9 w-full rounded-md border border-input bg-input px-3 text-sm sm:w-auto sm:min-w-[200px]"
               >
                 <option value="">
                   {leaguesLoading ? "Loading leagues…" : "Select a league"}
@@ -332,6 +332,7 @@ export default function WatchlistPage() {
             onClick={add}
             loading={adding}
             disabled={entityType === "team" ? !selectedTeamName : !selectedLeagueName}
+            className="w-full sm:w-auto"
           >
             <Plus className="mr-2 h-4 w-4" /> Add
           </Button>

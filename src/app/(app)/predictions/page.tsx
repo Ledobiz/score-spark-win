@@ -129,11 +129,11 @@ export default function PredictionsPage() {
       </div>
 
       {/* Stepper */}
-      <div className="mb-6 flex items-center gap-2 text-xs">
+      <div className="mb-6 flex flex-wrap items-center gap-x-1 gap-y-2 text-xs sm:gap-x-2">
         {[1, 2, 3].map((n) => (
-          <div key={n} className="flex items-center gap-2">
+          <div key={n} className="flex items-center gap-1.5 sm:gap-2">
             <span
-              className={`grid h-7 w-7 place-items-center rounded-full font-semibold ${
+              className={`grid h-7 w-7 shrink-0 place-items-center rounded-full font-semibold ${
                 step >= n
                   ? "bg-primary text-primary-foreground"
                   : "bg-secondary text-muted-foreground"
@@ -141,10 +141,14 @@ export default function PredictionsPage() {
             >
               {n}
             </span>
-            <span className={step >= n ? "font-medium" : "text-muted-foreground"}>
+            <span
+              className={`hidden sm:inline ${step >= n ? "font-medium" : "text-muted-foreground"}`}
+            >
               {n === 1 ? "League" : n === 2 ? "Fixture" : "Prediction"}
             </span>
-            {n < 3 && <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+            {n < 3 && (
+              <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+            )}
           </div>
         ))}
       </div>

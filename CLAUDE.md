@@ -92,7 +92,7 @@ browser) and returns `null` on any failure or when unconfigured. Every caller in
 `src/lib/predictions/service.ts` (`getLeagues`, `getFixtures`, `fetchDetailed`,
 `getRecommendations`, `getInsights`, `getStats`) 
 
-The Python service can be accessed on this computer in case you need to adjust its endpoint or create a new one as required by the UI of this project. You can locate the Python API project here: C:\Users\HP\Desktop\AI Agents\predictscore. It is served locally through this URL: http://localhost:5050
+The Python service can be accessed on this computer in case you need to adjust its endpoint or create a new one as required by the UI of this project. You can locate the Python API project here: C:\Users\HP\Desktop\AI Agents\predictscore. It is served locally through this URL: http://localhost:5050. The live API project can be accessed through this URL: https://sportan-prediction-api.onrender.com
 
 **Honesty guardrail:** never present fabricated/inflated performance figures as if
 they were a user's real outcomes or the model's real track record — mock/fallback

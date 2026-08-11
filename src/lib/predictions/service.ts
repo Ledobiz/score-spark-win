@@ -82,6 +82,28 @@ export async function fetchDetailed(data: {
   return ext as DetailedPrediction | null;
 }
 
+/**
+ * Reads back a settled outcome for a fixture previously sent to
+ * /prediction/detailed (settlement itself happens server-side in the Python
+ * API against matches.csv). Returns { found: false } when unsettled/unknown —
+ * never fabricates an outcome.
+ */
+export async function getMatchResult(params: {
+  league: string;
+  home: string;
+  away: string;
+  matchDate: string; // YYYY-MM-DD
+}): Promise<{ found: boolean; outcome?: "home_win" | "draw" | "away_win" }> {
+  const ext = await callExternal("/results", {
+    league: params.league,
+    home: params.home,
+    away: params.away,
+    match_date: params.matchDate,
+  });
+  if (!ext) return { found: false };
+  return ext as { found: boolean; outcome?: "home_win" | "draw" | "away_win" };
+}
+
 export async function getRecommendations(): Promise<{
   recommendations: Recommendation[];
   unavailable?: boolean;

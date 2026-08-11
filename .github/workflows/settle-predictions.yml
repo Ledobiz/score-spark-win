@@ -1,0 +1,28 @@
+name: Settle prediction results
+
+# Sweeps UserPrediction rows whose match has kicked off but has no result yet,
+# and copies over any outcome the Python API has already settled against
+# matches.csv (see api/appstate.py / app/store.py in the predictscore repo).
+# matches.csv itself only refreshes once daily, so most rows won't flip off
+# "Pending" until the next daily refresh has landed — hourly here is about
+# picking that up promptly, not near-real-time settlement.
+
+on:
+  schedule:
+    - cron: "0 * * * *" # hourly
+  workflow_dispatch: {}
+
+jobs:
+  settle:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call settlement endpoint
+        run: |
+          status=$(curl -s -o /tmp/resp.json -w "%{http_code}" -X POST \
+            "https://shuzam.com/api/cron/settle-predictions" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}")
+          cat /tmp/resp.json
+          if [ "$status" -ge 300 ]; then
+            echo "::error::settle-predictions returned HTTP $status"
+            exit 1
+          fi

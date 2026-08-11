@@ -98,6 +98,7 @@ export async function POST(request: NextRequest) {
 
   // Persist to the user's prediction history so it loads on sign-in.
   try {
+    const kickoff = data.kickoff ? new Date(data.kickoff) : null;
     await prisma.userPrediction.create({
       data: {
         userId: user.id,
@@ -109,6 +110,7 @@ export async function POST(request: NextRequest) {
         confidence: result.simple.confidence,
         method: result.method,
         payload: result as unknown as Prisma.InputJsonValue,
+        kickoff: kickoff && !isNaN(kickoff.getTime()) ? kickoff : null,
       },
     });
   } catch {
