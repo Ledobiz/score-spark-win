@@ -39,7 +39,7 @@ export function Hero() {
           </h1>
 
           <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-            PredictPro scores every fixture with a real model — 1X2, BTTS, Over/Under,
+            Shuzam scores every fixture with a real model — 1X2, BTTS, Over/Under,
             expected goals and scorelines — and shows you an honest confidence tier for
             each pick, so you know exactly how much to trust it.
           </p>

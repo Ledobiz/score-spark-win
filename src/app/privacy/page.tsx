@@ -4,15 +4,15 @@ import { LegalLayout } from "@/components/marketing/legal-layout";
 import { LEGAL_CONTACT_EMAIL, LEGAL_LAST_UPDATED } from "@/lib/legal";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — PredictPro",
-  description: "How PredictPro collects, uses, and protects your personal data.",
+  title: "Privacy Policy — Shuzam",
+  description: "How Shuzam collects, uses, and protects your personal data.",
 };
 
 export default function PrivacyPage() {
   return (
     <LegalLayout title="Privacy Policy" updated={LEGAL_LAST_UPDATED}>
       <p>
-        This Privacy Policy explains how [Company Legal Name] (&quot;PredictPro&quot;,
+        This Privacy Policy explains how [Company Legal Name] (&quot;Shuzam&quot;,
         &quot;we&quot;, &quot;us&quot;) collects, uses, discloses, and protects your personal data
         when you use the Service. It should be read alongside our{" "}
         <Link href="/terms">Terms of Service</Link> and <Link href="/cookies">Cookie Policy</Link>.
@@ -79,7 +79,7 @@ export default function PrivacyPage() {
         </li>
         <li>
           <strong>Authorities</strong>, where required to comply with a legal obligation, or to
-          protect the rights, safety, or property of PredictPro or our users.
+          protect the rights, safety, or property of Shuzam or our users.
         </li>
       </ul>
       <p>

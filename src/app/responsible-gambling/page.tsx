@@ -4,22 +4,22 @@ import { LegalLayout } from "@/components/marketing/legal-layout";
 import { LEGAL_CONTACT_EMAIL, LEGAL_LAST_UPDATED } from "@/lib/legal";
 
 export const metadata: Metadata = {
-  title: "Responsible Gambling — PredictPro",
+  title: "Responsible Gambling — Shuzam",
   description:
-    "PredictPro provides informational football predictions only. Read our responsible gambling commitment, risk disclosure, and support resources.",
+    "Shuzam provides informational football predictions only. Read our responsible gambling commitment, risk disclosure, and support resources.",
 };
 
 export default function ResponsibleGamblingPage() {
   return (
     <LegalLayout title="Responsible Gambling" updated={LEGAL_LAST_UPDATED}>
       <p>
-        PredictPro is a data and analytics product. This page explains what that does — and
+        Shuzam is a data and analytics product. This page explains what that does — and
         doesn&apos;t — mean for how you should use it.
       </p>
 
       <h2>1. We Are Not a Bookmaker</h2>
       <p>
-        PredictPro does not accept bets, hold funds, or process payouts. We have no financial
+        Shuzam does not accept bets, hold funds, or process payouts. We have no financial
         relationship tied to whether a prediction is right or wrong. Nothing on the Service is an
         offer to gamble, and nothing here is betting advice — it is statistical output intended for
         informational purposes only.

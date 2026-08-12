@@ -4,16 +4,16 @@ import { LegalLayout } from "@/components/marketing/legal-layout";
 import { LEGAL_CONTACT_EMAIL, LEGAL_LAST_UPDATED } from "@/lib/legal";
 
 export const metadata: Metadata = {
-  title: "Terms of Service — PredictPro",
-  description: "The terms and conditions governing use of PredictPro.",
+  title: "Terms of Service — Shuzam",
+  description: "The terms and conditions governing use of Shuzam.",
 };
 
 export default function TermsPage() {
   return (
     <LegalLayout title="Terms of Service" updated={LEGAL_LAST_UPDATED}>
       <p>
-        These Terms of Service (&quot;Terms&quot;) govern your access to and use of PredictPro
-        (the &quot;Service&quot;), operated by [Company Legal Name] (&quot;PredictPro&quot;,
+        These Terms of Service (&quot;Terms&quot;) govern your access to and use of Shuzam
+        (the &quot;Service&quot;), operated by [Company Legal Name] (&quot;Shuzam&quot;,
         &quot;we&quot;, &quot;us&quot;). By creating an account or otherwise using the Service,
         you agree to be bound by these Terms and our{" "}
         <Link href="/privacy">Privacy Policy</Link>. If you do not agree, do not use the Service.
@@ -30,13 +30,13 @@ export default function TermsPage() {
 
       <h2>2. The Service</h2>
       <p>
-        PredictPro provides statistical, model-generated football (soccer) match predictions —
+        Shuzam provides statistical, model-generated football (soccer) match predictions —
         including outcome probabilities, confidence scores, expected goals, and related analytics —
         for informational and entertainment purposes only.
       </p>
       <ul>
         <li>
-          PredictPro is <strong>not a bookmaker, betting exchange, or gambling operator</strong>. We
+          Shuzam is <strong>not a bookmaker, betting exchange, or gambling operator</strong>. We
           do not accept wagers, hold funds on behalf of users, or process payouts of any kind.
         </li>
         <li>
@@ -82,7 +82,7 @@ export default function TermsPage() {
       <h2>6. Intellectual Property</h2>
       <p>
         The Service, including its design, models, text, and underlying software, is owned by
-        PredictPro or its licensors and is protected by intellectual property laws. We grant you a
+        Shuzam or its licensors and is protected by intellectual property laws. We grant you a
         limited, non-exclusive, non-transferable license to use the Service for your personal,
         non-commercial use, subject to these Terms.
       </p>
@@ -106,7 +106,7 @@ export default function TermsPage() {
 
       <h2>9. Limitation of Liability</h2>
       <p>
-        TO THE MAXIMUM EXTENT PERMITTED BY LAW, PREDICTPRO AND ITS OFFICERS, EMPLOYEES, AND AGENTS
+        TO THE MAXIMUM EXTENT PERMITTED BY LAW, SHUZAM AND ITS OFFICERS, EMPLOYEES, AND AGENTS
         WILL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES,
         OR ANY LOSS OF PROFITS, REVENUE, OR FUNDS WAGERED, ARISING FROM OR RELATED TO YOUR USE OF THE
         SERVICE. OUR TOTAL LIABILITY FOR ANY CLAIM ARISING FROM THESE TERMS OR THE SERVICE WILL NOT

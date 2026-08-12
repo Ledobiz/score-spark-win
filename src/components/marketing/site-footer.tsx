@@ -31,7 +31,7 @@ export function SiteFooter() {
               <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary text-primary-foreground">
                 <TrendingUp className="h-[18px] w-[18px]" />
               </span>
-              PredictPro
+              Shuzam
             </Link>
             <p className="mt-3 max-w-sm text-sm text-muted-foreground">
               Data-driven football predictions with honest confidence tiers. Model outputs are
@@ -59,7 +59,7 @@ export function SiteFooter() {
         </div>
 
         <div className="mt-10 flex flex-col gap-3 border-t border-border/70 pt-6 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-          <p>© {new Date().getFullYear()} PredictPro. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Shuzam. All rights reserved.</p>
           <p className="max-w-xl sm:text-right">
             18+ only. Gambling can be addictive — please{" "}
             <Link href="/responsible-gambling" className="underline underline-offset-2 hover:text-foreground">

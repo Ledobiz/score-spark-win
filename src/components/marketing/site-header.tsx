@@ -46,7 +46,7 @@ export function SiteHeader() {
           <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary text-primary-foreground glow-accent">
             <TrendingUp className="h-[18px] w-[18px]" />
           </span>
-          PredictPro
+          Shuzam
         </Link>
 
         <nav className="hidden items-center gap-8 md:flex">

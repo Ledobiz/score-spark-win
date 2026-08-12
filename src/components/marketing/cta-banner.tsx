@@ -17,7 +17,7 @@ export function CtaBanner() {
               Stop guessing. Start predicting with data.
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
-              Join PredictPro free — no card required — and see every fixture broken
+              Join Shuzam free — no card required — and see every fixture broken
               down with honest, model-backed confidence.
             </p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3">

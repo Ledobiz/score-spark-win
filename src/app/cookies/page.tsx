@@ -4,15 +4,15 @@ import { LegalLayout } from "@/components/marketing/legal-layout";
 import { LEGAL_CONTACT_EMAIL, LEGAL_LAST_UPDATED } from "@/lib/legal";
 
 export const metadata: Metadata = {
-  title: "Cookie Policy — PredictPro",
-  description: "The cookies PredictPro uses and how to control them.",
+  title: "Cookie Policy — Shuzam",
+  description: "The cookies Shuzam uses and how to control them.",
 };
 
 export default function CookiesPage() {
   return (
     <LegalLayout title="Cookie Policy" updated={LEGAL_LAST_UPDATED}>
       <p>
-        This Cookie Policy explains how PredictPro uses cookies and similar technologies, and works
+        This Cookie Policy explains how Shuzam uses cookies and similar technologies, and works
         alongside our <Link href="/privacy">Privacy Policy</Link>.
       </p>
 

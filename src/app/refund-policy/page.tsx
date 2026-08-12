@@ -4,15 +4,15 @@ import { LegalLayout } from "@/components/marketing/legal-layout";
 import { LEGAL_CONTACT_EMAIL, LEGAL_LAST_UPDATED } from "@/lib/legal";
 
 export const metadata: Metadata = {
-  title: "Refund & Cancellation Policy — PredictPro",
-  description: "How free trials, subscription billing, cancellation, and refunds work on PredictPro.",
+  title: "Refund & Cancellation Policy — Shuzam",
+  description: "How free trials, subscription billing, cancellation, and refunds work on Shuzam.",
 };
 
 export default function RefundPolicyPage() {
   return (
     <LegalLayout title="Refund &amp; Cancellation Policy" updated={LEGAL_LAST_UPDATED}>
       <p>
-        This policy explains how billing, cancellation, and refunds work for PredictPro subscriptions,
+        This policy explains how billing, cancellation, and refunds work for Shuzam subscriptions,
         and forms part of our <Link href="/terms">Terms of Service</Link>.
       </p>
 

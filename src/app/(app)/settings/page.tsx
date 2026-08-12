@@ -161,7 +161,7 @@ function SettingsForm({ ent }: { ent: EntitlementResponse }) {
             <div>
               <Label htmlFor="dl-toggle">Daily prediction limit</Label>
               <p className="mt-1 text-xs text-muted-foreground">
-                Once you hit this many predictions in a day, PredictPro stops
+                Once you hit this many predictions in a day, Shuzam stops
                 you from running more until tomorrow — even if your plan
                 allows more.
               </p>
