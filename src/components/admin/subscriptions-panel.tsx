@@ -314,15 +314,17 @@ function PlanCard({
           <span>Export history</span>
           <Switch checked={exp} onCheckedChange={setExp} />
         </div>
-        <label className="col-span-2">
-          Referrals per point (0 = default of 2)
-          <Input
-            type="number"
-            value={referralsPerPoint}
-            onChange={(e) => setReferralsPerPoint(Number(e.target.value))}
-            className="mt-1"
-          />
-        </label>
+        {plan.priceNgn > 0 && (
+          <label className="col-span-2">
+            Referrals per point (0 = default of 2)
+            <Input
+              type="number"
+              value={referralsPerPoint}
+              onChange={(e) => setReferralsPerPoint(Number(e.target.value))}
+              className="mt-1"
+            />
+          </label>
+        )}
         <div className="col-span-2 flex items-center justify-between rounded-md border border-border/60 p-2">
           <span>Active (visible to users)</span>
           <Switch

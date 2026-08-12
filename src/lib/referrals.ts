@@ -182,7 +182,7 @@ export async function creditReferralIfEligible(paymentId: string): Promise<void>
   if (successfulPaymentCount !== 1) return;
 
   const plan = await prisma.plan.findUnique({ where: { id: payment.planId } });
-  if (!plan) return;
+  if (!plan || plan.priceNgn === 0) return;
 
   const referredIds = (
     await prisma.profile.findMany({ where: { referredById: referrerId }, select: { id: true } })
@@ -212,7 +212,10 @@ export async function getReferralSummary(userId: string): Promise<ReferralSummar
       where: { referredById: userId },
       select: { id: true, fullName: true, email: true, createdAt: true },
     }),
-    prisma.plan.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
+    prisma.plan.findMany({
+      where: { isActive: true, priceNgn: { gt: 0 } },
+      orderBy: { sortOrder: "asc" },
+    }),
     prisma.referralRedemption.findMany({
       where: { userId },
       include: { plan: true },
@@ -287,6 +290,9 @@ export async function redeemReferralPoints(
 
   const plan = await prisma.plan.findUnique({ where: { id: planId } });
   if (!plan || !plan.isActive) throw new Error("Select a valid plan");
+  if (plan.priceNgn === 0) {
+    throw new Error("Referral points can't be redeemed for the free plan");
+  }
 
   const available = await getAvailablePoints(userId, planId);
   if (points > available) throw new Error("Not enough referral points for this plan");

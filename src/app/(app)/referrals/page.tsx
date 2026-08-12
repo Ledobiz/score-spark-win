@@ -4,7 +4,7 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Copy, Gift, Lock, Users } from "lucide-react";
+import { Copy, Gift, Link2, Lock, Sparkles, Users } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -64,12 +64,71 @@ export default function ReferralsPage() {
         free period of that plan to redeem whenever you like.
       </p>
 
+      <Card className="mt-6 p-4">
+        <div className="flex items-center gap-2 text-sm font-medium">
+          <Sparkles className="h-4 w-4 text-primary" /> How it works
+        </div>
+        <ol className="mt-3 space-y-2.5 text-sm text-muted-foreground">
+          <li className="flex gap-2.5">
+            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+              1
+            </span>
+            <span>
+              Share your referral link or code (below) with friends — they can
+              paste the code in at sign up, or just use your link.
+            </span>
+          </li>
+          <li className="flex gap-2.5">
+            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+              2
+            </span>
+            <span>
+              Only their <strong className="text-foreground">first-ever</strong>{" "}
+              successful payment counts — it must be for a plan, and renewals
+              don&apos;t count again.
+            </span>
+          </li>
+          <li className="flex gap-2.5">
+            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+              3
+            </span>
+            <span>
+              Every plan tracks its referrals separately. Once enough people
+              have paid for the <strong className="text-foreground">same plan</strong>{" "}
+              (the &quot;X / Y referrals to next point&quot; badge below shows your
+              progress), you earn 1 point for that plan.
+            </span>
+          </li>
+          <li className="flex gap-2.5">
+            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+              4
+            </span>
+            <span>
+              1 point = 1 free billing period of <strong className="text-foreground">that same plan</strong>{" "}
+              (points don&apos;t convert between plans). Redeem points whenever
+              you like — you don&apos;t have to use them all at once, and unused
+              points are saved for later.
+            </span>
+          </li>
+          <li className="flex gap-2.5">
+            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+              5
+            </span>
+            <span>
+              Redeeming activates a subscription immediately, so it&apos;s only
+              available while you don&apos;t already have an active subscription
+              running.
+            </span>
+          </li>
+        </ol>
+      </Card>
+
       {isLoading ? (
         <FormCardSkeleton lines={1} />
       ) : (
         <Card className="mt-6 p-4">
           <div className="flex items-center gap-2 text-sm font-medium">
-            <Gift className="h-4 w-4 text-primary" /> Your referral link
+            <Link2 className="h-4 w-4 text-primary" /> Your referral link
           </div>
           <div className="mt-3 flex flex-col gap-2 sm:flex-row">
             <Input readOnly value={data?.referralLink ?? ""} className="font-mono text-xs sm:text-sm" />
@@ -85,6 +144,10 @@ export default function ReferralsPage() {
       )}
 
       <h2 className="mt-8 text-lg font-semibold">Your points</h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        One card per plan — the badge shows how many qualifying referrals
+        you&apos;re at toward your next point on that plan.
+      </p>
       {isLoading ? (
         <CardListSkeleton count={2} className="mt-3 grid gap-3 sm:grid-cols-2" />
       ) : (
@@ -140,6 +203,10 @@ export default function ReferralsPage() {
       )}
 
       <h2 className="mt-8 text-lg font-semibold">People you referred</h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Everyone who signed up with your link or code. &quot;Paid&quot; means
+        their first payment has already counted toward your points.
+      </p>
       {isLoading ? (
         <CardListSkeleton count={3} className="mt-3 space-y-3" />
       ) : (data?.referredUsers.length ?? 0) === 0 ? (
@@ -168,6 +235,9 @@ export default function ReferralsPage() {
       )}
 
       <h2 className="mt-8 text-lg font-semibold">Redemption history</h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Every time you&apos;ve redeemed points for free subscription time.
+      </p>
       <Card className="mt-3 p-4">
         <div className="overflow-auto">
           <table className="w-full text-sm">
