@@ -2,6 +2,8 @@ import { randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { sendEmail } from "@/lib/email";
 import { paymentReceiptEmailHtml, type PaymentReceiptInput } from "@/lib/email-templates";
+import { activateSubscription } from "@/lib/subscriptions";
+import { creditReferralIfEligible } from "@/lib/referrals";
 import { flutterwaveClient } from "./flutterwave";
 import { paystackClient } from "./paystack";
 import { GATEWAY_PROVIDERS, type GatewayProvider, type PaymentGatewayClient, type VerifyResult } from "./types";
@@ -122,20 +124,11 @@ export async function verifyAndActivate(
   });
 
   const periodEnd = new Date(Date.now() + (plan.intervalDays || 30) * DAY_MS);
-  const subData = {
-    planId: plan.id,
-    status: "active",
-    trialEndsAt: null,
-    currentPeriodEnd: periodEnd,
+  await activateSubscription(payment.userId, plan.id, {
+    periodEnd,
     paymentRef: payment.reference,
     paymentProvider: provider,
-  };
-  const existing = await prisma.subscription.findFirst({ where: { userId: payment.userId } });
-  if (existing) {
-    await prisma.subscription.update({ where: { id: existing.id }, data: subData });
-  } else {
-    await prisma.subscription.create({ data: { userId: payment.userId, ...subData } });
-  }
+  });
 
   await sendPaymentReceipt(payment.userId, {
     planName: plan.name,
@@ -145,6 +138,8 @@ export async function verifyAndActivate(
     paidAt: new Date(),
     periodEnd,
   });
+
+  await creditReferralIfEligible(payment.id);
 
   return { success: true };
 }

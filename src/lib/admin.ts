@@ -34,6 +34,7 @@ export interface AdminUserRow {
 
 export interface AdminPlan {
   id: string;
+  referralsPerPoint: number;
   name: string;
   interval: string;
   intervalDays: number;
@@ -165,6 +166,32 @@ export interface AdminPredictionRow {
   confidence: number | null;
   method: string | null;
   result: string | null;
+  createdAt: string;
+}
+
+export interface AdminReferralStats {
+  totalPointsEarned: number;
+  totalPointsRedeemed: number;
+  topReferrers: { userId: string; email: string | null; points: number }[];
+}
+
+export interface AdminReferralCreditRow {
+  id: string;
+  referrerId: string;
+  referrerEmail: string | null;
+  planId: string;
+  planName: string;
+  createdAt: string;
+}
+
+export interface AdminReferralRedemptionRow {
+  id: string;
+  userId: string;
+  userEmail: string | null;
+  planId: string;
+  planName: string;
+  pointsUsed: number;
+  periodEndAt: string;
   createdAt: string;
 }
 
@@ -300,6 +327,7 @@ export async function listPlans(): Promise<AdminPlan[]> {
     canUseAccumulator: p.canUseAccumulator,
     canExportHistory: p.canExportHistory,
     isActive: p.isActive,
+    referralsPerPoint: p.referralsPerPoint,
   }));
 }
 
@@ -328,6 +356,9 @@ export async function updatePlan(
         ? { canExportHistory: patch.canExportHistory }
         : {}),
       ...(patch.isActive !== undefined ? { isActive: patch.isActive } : {}),
+      ...(patch.referralsPerPoint !== undefined
+        ? { referralsPerPoint: patch.referralsPerPoint }
+        : {}),
     },
   });
 }
@@ -379,6 +410,7 @@ export async function createPlan(input: {
     canUseAccumulator: created.canUseAccumulator,
     canExportHistory: created.canExportHistory,
     isActive: created.isActive,
+    referralsPerPoint: created.referralsPerPoint,
   };
 }
 
@@ -857,6 +889,81 @@ export async function listAuditLog(filters: {
       createdAt: r.createdAt.toISOString(),
     })),
     total,
+  };
+}
+
+/**
+ * Read-only referral monitoring: aggregate stats plus the raw credit/redemption
+ * rows, newest first. No mutations here — the one referral-related setting
+ * admins can change (`Plan.referralsPerPoint`) goes through the existing
+ * updatePlan()/`/api/admin/plans` path.
+ */
+export async function getReferralActivity(): Promise<{
+  stats: AdminReferralStats;
+  credits: AdminReferralCreditRow[];
+  redemptions: AdminReferralRedemptionRow[];
+}> {
+  const [credits, redemptions, topReferrerGroups] = await Promise.all([
+    prisma.referralCredit.findMany({
+      include: { plan: true },
+      orderBy: { createdAt: "desc" },
+      take: 100,
+    }),
+    prisma.referralRedemption.findMany({
+      include: { plan: true },
+      orderBy: { createdAt: "desc" },
+      take: 100,
+    }),
+    prisma.referralCredit.groupBy({
+      by: ["referrerId"],
+      _count: { _all: true },
+      orderBy: { _count: { referrerId: "desc" } },
+      take: 5,
+    }),
+  ]);
+
+  const totalPointsRedeemed = redemptions.reduce((sum, r) => sum + r.pointsUsed, 0);
+
+  const userIds = [
+    ...new Set([
+      ...credits.map((c) => c.referrerId),
+      ...redemptions.map((r) => r.userId),
+      ...topReferrerGroups.map((g) => g.referrerId),
+    ]),
+  ];
+  const users = userIds.length
+    ? await prisma.profile.findMany({ where: { id: { in: userIds } }, select: { id: true, email: true } })
+    : [];
+  const emailByUserId = new Map(users.map((u) => [u.id, u.email]));
+
+  return {
+    stats: {
+      totalPointsEarned: await prisma.referralCredit.count(),
+      totalPointsRedeemed,
+      topReferrers: topReferrerGroups.map((g) => ({
+        userId: g.referrerId,
+        email: emailByUserId.get(g.referrerId) ?? null,
+        points: g._count._all,
+      })),
+    },
+    credits: credits.map((c) => ({
+      id: c.id,
+      referrerId: c.referrerId,
+      referrerEmail: emailByUserId.get(c.referrerId) ?? null,
+      planId: c.planId,
+      planName: c.plan.name,
+      createdAt: c.createdAt.toISOString(),
+    })),
+    redemptions: redemptions.map((r) => ({
+      id: r.id,
+      userId: r.userId,
+      userEmail: emailByUserId.get(r.userId) ?? null,
+      planId: r.planId,
+      planName: r.plan.name,
+      pointsUsed: r.pointsUsed,
+      periodEndAt: r.periodEndAt.toISOString(),
+      createdAt: r.createdAt.toISOString(),
+    })),
   };
 }
 

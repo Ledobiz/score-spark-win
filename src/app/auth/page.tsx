@@ -48,6 +48,7 @@ function AuthForm() {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [ageOk, setAgeOk] = useState(false);
+  const [referralCode, setReferralCode] = useState(search.get("ref") ?? "");
   const [loading, setLoading] = useState(false);
 
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -79,7 +80,7 @@ function AuthForm() {
             setTimeout(() => reject(new Error("timeout")), 15_000),
           );
           const res = await Promise.race([
-            signIn("google-popup", { code: response.code, redirect: false }),
+            signIn("google-popup", { code: response.code, referralCode, redirect: false }),
             timeout,
           ]);
           if (res?.error) {
@@ -117,7 +118,13 @@ function AuthForm() {
         const res = await fetch("/api/auth/register", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password, fullName, ageConfirmed: ageOk }),
+          body: JSON.stringify({
+            email,
+            password,
+            fullName,
+            ageConfirmed: ageOk,
+            referralCode: referralCode.trim() || undefined,
+          }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? "Could not create your account");
@@ -228,6 +235,16 @@ function AuthForm() {
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   required
+                />
+              </div>
+            )}
+            {mode === "signup" && (
+              <div className="space-y-2">
+                <Label htmlFor="referralCode">Referral code (optional)</Label>
+                <Input
+                  id="referralCode"
+                  value={referralCode}
+                  onChange={(e) => setReferralCode(e.target.value)}
                 />
               </div>
             )}

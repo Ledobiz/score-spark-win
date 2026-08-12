@@ -3,6 +3,7 @@ import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { sendWelcomeEmail } from "@/lib/welcome-email";
+import { resolveReferrer } from "@/lib/referrals";
 
 /**
  * Exchanges a Google Identity Services authorization code (obtained
@@ -106,13 +107,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     Credentials({
       id: "google-popup",
       name: "Google",
-      credentials: { code: { label: "code", type: "text" } },
+      credentials: {
+        code: { label: "code", type: "text" },
+        referralCode: { label: "referralCode", type: "text" },
+      },
       authorize: async (credentials) => {
         const code = credentials?.code as string | undefined;
         if (!code) return null;
 
         const verified = await verifyGoogleCode(code);
         if (!verified) return null;
+
+        const referralCode = credentials?.referralCode as string | undefined;
+        const referredById = referralCode ? await resolveReferrer(referralCode) : null;
 
         const existing = await prisma.profile.findUnique({
           where: { email: verified.email },
@@ -126,6 +133,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             fullName: verified.name,
             avatarUrl: verified.picture,
             emailVerified: new Date(),
+            ...(referredById ? { referredById } : {}),
           },
         });
         if (!existing) await sendWelcomeEmail(profile.id);

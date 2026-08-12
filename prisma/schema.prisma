@@ -66,6 +66,8 @@ model Profile {
   ageConfirmed    Boolean   @default(false) @map("age_confirmed")
   dailyViewLimit  Int       @default(0) @map("daily_view_limit")
   notifyDailyTips Boolean   @default(false) @map("notify_daily_tips")
+  referralCode    String?   @unique @map("referral_code")
+  referredById    String?   @map("referred_by_id") @db.Uuid
   createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt       DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
 
@@ -97,8 +99,15 @@ model Plan {
   isActive                   Boolean        @default(true) @map("is_active")
   features                   Json           @default("{}")
   sortOrder                  Int            @default(0) @map("sort_order")
+  /// Distinct referred users (each paying for this plan for the first time
+  /// ever) required to earn 1 referral point for this plan. 0 = falls back to
+  /// a default of 2 — same "unset means sane default" convention as the
+  /// daily_*_limit columns above.
+  referralsPerPoint          Int            @default(0) @map("referrals_per_point")
   subscriptions              Subscription[]
   payments                   Payment[]
+  referralCredits            ReferralCredit[]
+  referralRedemptions        ReferralRedemption[]
 
   @@map("plans")
 }
@@ -149,6 +158,35 @@ model Payment {
 
   @@index([userId, createdAt(sort: Desc)])
   @@map("payments")
+}
+
+/// One row = 1 earned referral point. Rows are only ever inserted, never
+/// mutated/deleted — recomputed idempotently from qualifying referral counts
+/// (see creditReferralIfEligible in src/lib/referrals.ts), so this table also
+/// doubles as the audit trail of how points were earned.
+model ReferralCredit {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  referrerId String   @map("referrer_id") @db.Uuid
+  planId     String   @map("plan_id")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  plan       Plan     @relation(fields: [planId], references: [id])
+
+  @@index([referrerId, planId])
+  @@map("referral_credits")
+}
+
+/// One row per redemption action (may consume more than one point at once).
+model ReferralRedemption {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  planId      String   @map("plan_id")
+  pointsUsed  Int      @map("points_used")
+  periodEndAt DateTime @map("period_end_at") @db.Timestamptz(6)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  plan        Plan     @relation(fields: [planId], references: [id])
+
+  @@index([userId])
+  @@map("referral_redemptions")
 }
 
 model UserRole {

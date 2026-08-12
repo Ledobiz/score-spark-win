@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Bookmark,
+  Gift,
   History,
   LayoutDashboard,
   Layers,
@@ -38,6 +39,7 @@ const NAV = [
   { to: "/history", label: "History", icon: History },
   { to: "/insights", label: "Insights", icon: LineChart },
   { to: "/watchlist", label: "Watchlist", icon: Bookmark },
+  { to: "/referrals", label: "Referrals", icon: Gift },
   { to: "/settings", label: "Settings", icon: Settings },
 ] as const;
 

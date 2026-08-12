@@ -8,6 +8,7 @@ const PROTECTED_PREFIXES = [
   "/accumulator",
   "/history",
   "/watchlist",
+  "/referrals",
   "/settings",
   "/insights",
   "/admin",

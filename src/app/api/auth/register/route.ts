@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import disposableDomains from "disposable-email-domains";
 import { prisma } from "@/lib/prisma";
 import { sendWelcomeEmail } from "@/lib/welcome-email";
+import { resolveReferrer } from "@/lib/referrals";
 
 const DISPOSABLE_DOMAINS = new Set(disposableDomains);
 
@@ -13,6 +14,7 @@ const schema = z.object({
   password: z.string().min(8),
   fullName: z.string().min(1),
   ageConfirmed: z.literal(true),
+  referralCode: z.string().optional(),
 });
 
 /**
@@ -48,6 +50,10 @@ export async function POST(request: Request) {
 
   const passwordHash = await bcrypt.hash(password, 12);
 
+  const referredById = parsed.data.referralCode
+    ? await resolveReferrer(parsed.data.referralCode)
+    : null;
+
   const profile = await prisma.profile.create({
     data: {
       email,
@@ -55,6 +61,7 @@ export async function POST(request: Request) {
       fullName,
       ageConfirmed,
       emailVerified: new Date(),
+      ...(referredById ? { referredById } : {}),
     },
   });
 

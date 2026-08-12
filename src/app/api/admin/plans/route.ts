@@ -19,6 +19,7 @@ const patchSchema = z.object({
   canUseAccumulator: z.boolean().optional(),
   canExportHistory: z.boolean().optional(),
   isActive: z.boolean().optional(),
+  referralsPerPoint: z.number().int().nonnegative().optional(),
 });
 
 export async function PATCH(request: NextRequest) {

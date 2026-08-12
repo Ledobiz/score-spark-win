@@ -284,3 +284,62 @@ export function welcomeEmailHtml(
     bodyHtml,
   });
 }
+
+export interface ReferralPointEarnedInput {
+  planName: string;
+  totalAvailable: number;
+}
+
+export function referralPointEarnedEmailHtml(input: ReferralPointEarnedInput, appUrl: string): string {
+  const bodyHtml = `
+    <h1 style="margin:0 0 12px;font-family:${FONT_STACK};font-size:22px;line-height:1.3;font-weight:700;color:${NAVY_TEXT};">
+      You earned a referral point
+    </h1>
+    <p style="margin:0 0 24px;font-family:${FONT_STACK};font-size:15px;line-height:1.6;color:${MUTED};">
+      Two people you referred just paid for the <strong style="color:${NAVY_TEXT};">${input.planName}</strong>
+      plan, so you've earned a free ${input.planName} subscription period. You now
+      have <strong style="color:${NAVY_TEXT};">${input.totalAvailable}</strong>
+      ${input.totalAvailable === 1 ? "point" : "points"} available for that plan —
+      redeem them whenever you're ready.
+    </p>
+
+    ${ctaButton("View your referrals", `${appUrl}/referrals`)}
+  `;
+
+  return emailShell({
+    title: "You earned a SHUZAM referral point",
+    preheader: `You earned a free ${input.planName} subscription period.`,
+    appUrl,
+    bodyHtml,
+  });
+}
+
+export interface ReferralRedeemedInput {
+  planName: string;
+  pointsUsed: number;
+  periodEnd: Date;
+}
+
+export function referralRedeemedEmailHtml(input: ReferralRedeemedInput, appUrl: string): string {
+  const bodyHtml = `
+    <h1 style="margin:0 0 12px;font-family:${FONT_STACK};font-size:22px;line-height:1.3;font-weight:700;color:${NAVY_TEXT};">
+      Referral points redeemed
+    </h1>
+    <p style="margin:0 0 24px;font-family:${FONT_STACK};font-size:15px;line-height:1.6;color:${MUTED};">
+      You redeemed <strong style="color:${NAVY_TEXT};">${input.pointsUsed}</strong>
+      ${input.pointsUsed === 1 ? "point" : "points"} for a free
+      <strong style="color:${NAVY_TEXT};">${input.planName}</strong> subscription.
+      Your plan is active now and runs until
+      <strong style="color:${NAVY_TEXT};">${formatDate(input.periodEnd)}</strong>.
+    </p>
+
+    ${ctaButton("Go to dashboard", `${appUrl}/dashboard`)}
+  `;
+
+  return emailShell({
+    title: "Your SHUZAM referral redemption",
+    preheader: `Redeemed ${input.pointsUsed} ${input.pointsUsed === 1 ? "point" : "points"} for ${input.planName}.`,
+    appUrl,
+    bodyHtml,
+  });
+}
