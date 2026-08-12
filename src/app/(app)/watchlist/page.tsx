@@ -12,6 +12,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CardListSkeleton } from "@/components/ui/skeletons";
 import { useEntitlement } from "@/lib/use-entitlement";
+import { formatOdds } from "@/lib/utils";
 import { stashDetailed } from "@/lib/predictions/detail-store";
 import type { WatchlistItem } from "@/app/api/watchlist/route";
 import type {
@@ -413,7 +414,7 @@ export default function WatchlistPage() {
                               {g.best.market}: {g.best.pick}
                             </div>
                             <div className="font-mono text-muted-foreground">
-                              {g.best.confidence}% · @{g.best.odds.toFixed(2)}
+                              {g.best.confidence}% · @{formatOdds(g.best.odds)}
                             </div>
                           </div>
                           <Button

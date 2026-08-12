@@ -39,6 +39,7 @@ import {
   ListRowSkeleton,
 } from "@/components/ui/skeletons";
 import { useEntitlement } from "@/lib/use-entitlement";
+import { formatOdds } from "@/lib/utils";
 import type { Recommendation, Stats } from "@/lib/predictions/types";
 import type { ActivityRow } from "@/app/api/activity/route";
 
@@ -444,7 +445,7 @@ export default function DashboardPage() {
                           <div className="mt-3 flex items-center justify-between rounded-lg bg-secondary/40 px-3 py-2">
                             <span className="text-sm font-semibold">{r.pick}</span>
                             <span className="font-mono text-sm text-muted-foreground">
-                              {r.odds.toFixed(2)}
+                              {formatOdds(r.odds)}
                             </span>
                           </div>
                         </Card>
@@ -502,7 +503,7 @@ export default function DashboardPage() {
                                   </span>
                                 </td>
                                 <td className="p-3 text-right font-mono">
-                                  {r.odds.toFixed(2)}
+                                  {formatOdds(r.odds)}
                                 </td>
                               </tr>
                             ))}

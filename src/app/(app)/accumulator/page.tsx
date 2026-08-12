@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ListRowSkeleton } from "@/components/ui/skeletons";
 import { useEntitlement } from "@/lib/use-entitlement";
+import { formatOdds } from "@/lib/utils";
 import type { BetSlipRow, SlipPick } from "@/app/api/bet-slips/route";
 import type { Recommendation } from "@/lib/predictions/types";
 
@@ -76,6 +77,10 @@ export default function AccumulatorPage() {
 
   const add = (r: Recommendation) => {
     if (picks.find((p) => p.id === r.id)) return;
+    if (r.odds == null) {
+      toast.error("This pick has no odds yet — try again shortly.");
+      return;
+    }
     if (picks.length >= MAX_PICKS) {
       toast.error(`You can add up to ${MAX_PICKS} picks per slip.`);
       return;
@@ -192,7 +197,7 @@ export default function AccumulatorPage() {
                     {r.confidence}%
                   </div>
                   <div className="font-mono text-muted-foreground">
-                    @{r.odds.toFixed(2)}
+                    @{formatOdds(r.odds)}
                   </div>
                 </div>
                 <Button size="icon" variant="ghost" onClick={() => add(r)}>
@@ -224,7 +229,7 @@ export default function AccumulatorPage() {
                   <div className="min-w-0">
                     <div className="truncate font-medium">{p.fixture}</div>
                     <div className="text-muted-foreground">
-                      {p.pick} @ {p.odds.toFixed(2)}
+                      {p.pick} @ {formatOdds(p.odds)}
                     </div>
                   </div>
                   <Button
@@ -317,7 +322,7 @@ export default function AccumulatorPage() {
                                 </div>
                               </div>
                               <span className="shrink-0 font-mono text-muted-foreground">
-                                @{p.odds.toFixed(2)}
+                                @{formatOdds(p.odds)}
                               </span>
                             </div>
                           ))}
